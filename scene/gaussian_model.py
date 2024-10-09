@@ -26,6 +26,7 @@ class GaussianModel:
     #Build the covariance using the matrix R and S as in the 3D Gaussian (𝚺 = R S S^⊤ R^⊤) 
     #The matrix contains rotation and scaling in the superior part of the matrix (3x3) and the traslation (center) in the fourth row
     #Define functions and activation as instance attribute -> make the model configurabile and dynamics
+    # TEST PER PUSH
     def setup_functions(self):
         def build_covariance_from_scaling_rotation(center, scaling, scaling_modifier, rotation):
             RS = build_scaling_rotation(torch.cat([scaling * scaling_modifier, torch.ones_like(scaling)], dim=-1), rotation).permute(0,2,1) # mi mette 1 per farla homo e scambia gli assi con permute in modo da portarla come std
