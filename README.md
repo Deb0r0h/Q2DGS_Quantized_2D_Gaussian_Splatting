@@ -161,5 +161,5 @@ This project is built upon [3DGS](https://github.com/graphdeco-inria/gaussian-sp
 
 
 ## Note
-The project is based on [Repo](https://github.com/Deb0r0h/2D-Gaussian-Splatting)
+The project is based on [Repo](https://github.com/hbb1/2d-gaussian-splatting)
 
