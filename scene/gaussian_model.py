@@ -423,7 +423,6 @@ class GaussianModel:
     # Generates new points from an existing set of points, selecting them based on a gradient threshold and then adding them to the current representation
     # Filters and removes points that do not meet certain conditions
     # * Used in densify_and_prune 
-    # TODO: chiedere se split e clone seguono la logica presente nella versione 3D, visto che nel paper non ne parlano
     def densify_and_split(self, grads, grad_threshold, scene_extent, N=2):
         n_init_points = self.get_xyz.shape[0]
         # Extract points that satisfy the gradient condition

@@ -28,19 +28,25 @@ try:
 except ImportError:
     TENSORBOARD_FOUND = False
 
+
+# Manage the training cycles of the rendering model basing on Gaussian, parameters, checkpoint and the rendering pipeline
 def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint):
     first_iter = 0
     tb_writer = prepare_output_and_logger(dataset)
     gaussians = GaussianModel(dataset.sh_degree)
     scene = Scene(dataset, gaussians)
     gaussians.training_setup(opt)
+
+    # if it has a checkpoint -> loads and update iter
     if checkpoint:
         (model_params, first_iter) = torch.load(checkpoint)
         gaussians.restore(model_params, opt)
 
+    # Initialize the background color (black or white)
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
+    # Used to measure the execution time at each iteration
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
 
@@ -51,13 +57,17 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
+
+    # TRAINING CYCLE
     for iteration in range(first_iter, opt.iterations + 1):        
 
         iter_start.record()
 
+        #Update the learing rate based on the current iteration
         gaussians.update_learning_rate(iteration)
 
-        # Every 1000 its we increase the levels of SH up to a maximum degree
+        # Every 1000 its we increase the levels of SH up to a maximum degree 
+        # (come from 3D Gaussian splatting: we start by optimizing only the zero-order component and then introduce one band of the SH after every 1000 iterations until all 4 bands of SH are represente)
         if iteration % 1000 == 0:
             gaussians.oneupSHdegree()
 
@@ -66,14 +76,21 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             viewpoint_stack = scene.getTrainCameras().copy()
         viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack)-1))
         
+        # Rendering based on camera and Gaussian
         render_pkg = render(viewpoint_cam, gaussians, pipe, background)
+        # It returns: the rendered image, the points in the viewspace, a visibility filter, the rays (radii) of each point
         image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
         
+        # Ground Truth
         gt_image = viewpoint_cam.original_image.cuda()
+
+        # L1 loss between render and gt + SSIM (structural similarity index to improve visual quality)
         Ll1 = l1_loss(image, gt_image)
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
         
-        # regularization
+        # Regularization:
+        # - Normal consistency -> L𝑛 = ∑︁𝜔𝑖(1−n𝑖^T N) based on the difference between the rendered normals and the the ones from the surfaces. Used after 7000 iter
+        # - Depth distortion -> L𝑑 = ∑︁𝜔𝑖𝜔𝑗|𝑧𝑖−𝑧𝑗| based on the distance between the rendered points. Used after 3000 iter
         lambda_normal = opt.lambda_normal if iteration > 7000 else 0.0
         lambda_dist = opt.lambda_dist if iteration > 3000 else 0.0
 
@@ -84,20 +101,24 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         normal_loss = lambda_normal * (normal_error).mean()
         dist_loss = lambda_dist * (rend_dist).mean()
 
-        # loss
+        # FINAL LOSS
         total_loss = loss + dist_loss + normal_loss
         
+        # Compute the gradient
         total_loss.backward()
 
         iter_end.record()
 
+        # Temporarily disable automatic gradient calculation
         with torch.no_grad():
-            # Progress bar
+
+            # PROGRESS BAR
+            # Ituses an exponential moving average (EMA) to get a smoothed version of the metrics
             ema_loss_for_log = 0.4 * loss.item() + 0.6 * ema_loss_for_log
             ema_dist_for_log = 0.4 * dist_loss.item() + 0.6 * ema_dist_for_log
             ema_normal_for_log = 0.4 * normal_loss.item() + 0.6 * ema_normal_for_log
 
-
+            # Every 10 iteration the values in the progress bar are updated
             if iteration % 10 == 0:
                 loss_dict = {
                     "Loss": f"{ema_loss_for_log:.{5}f}",
@@ -112,6 +133,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 progress_bar.close()
 
             # Log and save
+            # Metrics are recorded to display graphically during training
             if tb_writer is not None:
                 tb_writer.add_scalar('train_loss_patches/dist_loss', ema_dist_for_log, iteration)
                 tb_writer.add_scalar('train_loss_patches/normal_loss', ema_normal_for_log, iteration)
@@ -122,28 +144,33 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 scene.save(iteration)
 
 
-            # Densification
+            # DENSIFICATION: new Gaussian points are added to improve the representation of the model
             if iteration < opt.densify_until_iter:
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
                     size_threshold = 20 if iteration > opt.opacity_reset_interval else None
-                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.opacity_cull, scene.cameras_extent, size_threshold)
+                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.opacity_cull, scene.cameras_extent, size_threshold) # add and remove points
                 
                 if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
                     gaussians.reset_opacity()
 
-            # Optimizer step
+            # OPTIMIZATION STEP
             if iteration < opt.iterations:
                 gaussians.optimizer.step()
                 gaussians.optimizer.zero_grad(set_to_none = True)
 
+            # Save the checkpoint if in checkpoint iterations
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
 
-        with torch.no_grad():        
+
+        with torch.no_grad():
+
+            # Establishes a connection with a network graphical user interface (GUI) to monitor training in real time
+            # -> showing real-time rendering images        
             if network_gui.conn == None:
                 network_gui.try_connect(dataset.render_items)
             while network_gui.conn != None:
