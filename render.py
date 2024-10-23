@@ -12,6 +12,8 @@
 import torch
 from scene import Scene
 import os
+import yaml
+import trimesh
 from tqdm import tqdm
 from os import makedirs
 from gaussian_renderer import render
@@ -22,8 +24,10 @@ from arguments import ModelParams, PipelineParams, get_combined_args
 from gaussian_renderer import GaussianModel
 from utils.mesh_utils import GaussianExtractor, to_cam_open3d, post_process_mesh
 from utils.render_utils import generate_path, create_videos
+from utils.evaluation_utils import compareWithGT
 
 import open3d as o3d
+import numpy as np
 
 if __name__ == "__main__":
     # Set up command line argument parser
@@ -42,9 +46,13 @@ if __name__ == "__main__":
     parser.add_argument("--num_cluster", default=50, type=int, help='Mesh: number of connected clusters to export')
     parser.add_argument("--unbounded", action="store_true", help='Mesh: using unbounded mode for meshing')
     parser.add_argument("--mesh_res", default=1024, type=int, help='Mesh: resolution for unbounded mesh extraction')
+    parser.add_argument("--gt_mesh", default="", type=str, help='GT Mesh to perform evaluation')
+
     args = get_combined_args(parser)
     print("Rendering " + args.model_path)
 
+    # Used to save the metrics from the comparison between GT and rendered
+    metrics_values = {}
 
     dataset, iteration, pipe = model.extract(args), args.iteration, pipeline.extract(args)
     gaussians = GaussianModel(dataset.sh_degree)
@@ -106,3 +114,17 @@ if __name__ == "__main__":
         mesh_post = post_process_mesh(mesh, cluster_to_keep=args.num_cluster)
         o3d.io.write_triangle_mesh(os.path.join(train_dir, name.replace('.ply', '_post.ply')), mesh_post)
         print("mesh post processed saved at {}".format(os.path.join(train_dir, name.replace('.ply', '_post.ply'))))
+
+        # Compute metrics for evaluation (GT vs Obtained)
+        if args.gt_mesh:
+            chamfer, f1, rmse, haus = compareWithGT(gt_mesh,mesh_post,scene)
+
+            metrics_values['Chamfer distance'] = chamfer.item()
+            metrics_values['F1-score'] = f1.item()
+            metrics_values['RMSE'] = rmse.item()
+            metrics_values['Hausdoff distance'] = haus.item()
+        else:
+            print("No gt_mesh file passed as argument")
+
+    with open(os.path.join(train_dir,'metrics.yaml'), 'w') as file:
+        yaml.dump(metrics_values, file)
