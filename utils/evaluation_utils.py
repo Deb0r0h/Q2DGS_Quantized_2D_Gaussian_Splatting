@@ -15,9 +15,7 @@ from utils.render_utils import generate_path, create_videos
 import numpy as np
 import math
 from utils.render_utils import save_img_f32, save_img_u8
-
-# TODO manca gen_rays_at
-#from utils.graphics_utils import gen_rays_at
+from utils.graphics_utils import gen_rays_at
 from functools import partial
 from scipy.spatial import KDTree
 import trimesh

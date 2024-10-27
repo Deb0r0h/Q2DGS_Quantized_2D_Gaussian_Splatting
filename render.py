@@ -124,7 +124,7 @@ if __name__ == "__main__":
             metrics_values['RMSE'] = rmse.item()
             metrics_values['Hausdoff distance'] = haus.item()
         else:
-            print("No gt_mesh file passed as argument")
+            print("No ground true mesh file passed as argument")
 
     with open(os.path.join(train_dir,'metrics.yaml'), 'w') as file:
         yaml.dump(metrics_values, file)
