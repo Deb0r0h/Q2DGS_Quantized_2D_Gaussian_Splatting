@@ -30,4 +30,4 @@ for scan in tqdm(scans, desc="Rendering DTU dataset"):
     print(f"\nRendering {scan}...")
     subprocess.run(command)
 
-print("Rendering completed")
+print("Rendering of all scenes completed")

@@ -77,9 +77,8 @@ def focal2fov(focal, pixels):
     return 2*math.atan(pixels/(2*focal))
 
 
-    """
-    Generate all rays at world space from one camera.
-    """
+
+# Generate all rays at world space from one camera
 def gen_rays_at(viewpoint):
     c2w = (viewpoint.world_view_transform.T).inverse()
     W, H = viewpoint.image_width, viewpoint.image_height
