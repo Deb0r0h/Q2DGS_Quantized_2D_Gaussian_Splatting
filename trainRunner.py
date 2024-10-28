@@ -28,4 +28,4 @@ for scan in tqdm(scans, desc="Training DTU dataset"):
     print(f"\nTraining {scan}...")
     subprocess.run(command)
 
-print("Training of all scenes completed")
+print("Training completed")
