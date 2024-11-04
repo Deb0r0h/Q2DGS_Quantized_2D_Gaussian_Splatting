@@ -25,3 +25,5 @@ dependencies:
     - plyfile
     - opencv-python
     - numpy==1.24.4
+    - rtree
+    - embreex

@@ -80,17 +80,26 @@ def focal2fov(focal, pixels):
 
 # Generate all rays at world space from one camera
 def gen_rays_at(viewpoint):
-    c2w = (viewpoint.world_view_transform.T).inverse()
+    print("dentro gen_rays_")
+    try:
+        c2w = (viewpoint.world_view_transform.T).inverse()
+    except Exception as e:
+        print("errore nel calcolo dell'inversa",e)
     W, H = viewpoint.image_width, viewpoint.image_height
     fx = W / (2 * math.tan(viewpoint.FoVx / 2.))
     fy = H / (2 * math.tan(viewpoint.FoVy / 2.))
-    intrins = torch.tensor(
-        [[fx, 0., W / 2.],
-         [0., fy, H / 2.],
-         [0., 0., 1.0]]
-    ).float().cuda()
+
+    try:
+        intrins = torch.tensor(
+            [[fx, 0., W / 2.],
+             [0., fy, H / 2.],
+             [0., 0., 1.0]]
+        ).float().cuda()
+    except Exception as e:
+        print("errore nel calcolo dell'intrinsic",e)
     grid_x, grid_y = torch.meshgrid(torch.arange(W, device='cuda').float(), torch.arange(H, device='cuda').float(),indexing='xy')
     points = torch.stack([grid_x, grid_y, torch.ones_like(grid_x)], dim=-1).reshape(-1, 3)
     rays_d = points @ intrins.inverse().T @ c2w[:3, :3].T
     rays_o = c2w[:3, 3]
+
     return rays_o, rays_d

@@ -22,7 +22,7 @@ from utils.general_utils import safe_state
 from argparse import ArgumentParser
 from arguments import ModelParams, PipelineParams, get_combined_args
 from gaussian_renderer import GaussianModel
-from utils.mesh_utils import GaussianExtractor, to_cam_open3d, post_process_mesh
+from utils.mesh_utils import GaussianExtractor, to_cam_open3d, post_process_mesh, find_visible_points, chamfer_distance_and_f1_score
 from utils.render_utils import generate_path, create_videos
 from utils.evaluation_utils import compareWithGT
 
@@ -117,6 +117,27 @@ if __name__ == "__main__":
 
         # Compute metrics for evaluation (GT vs Obtained)
         if args.gt_mesh:
+            mpv = np.asarray(mesh_post.vertices).tolist()
+            mpt = np.asarray(mesh_post.triangles).tolist()
+
+            gt_mesh = trimesh.load_mesh(args.gt_mesh)
+            p_mesh = trimesh.Trimesh(vertices=mpv, faces=mpt)
+            print("Find GT")
+            gt_pts = find_visible_points(scene.getTrainCameras(), gt_mesh)
+            print("Find POST")
+            p_pts = find_visible_points(scene.getTrainCameras(), p_mesh)
+            chamfer_dist, f_score = chamfer_distance_and_f1_score(gt_pts, p_pts, f_threshold=0.5)
+            metrics_values['chamfer_dist'] = chamfer_dist.item()
+            metrics_values['f_score'] = f_score.item()
+            pcl = trimesh.points.PointCloud(gt_pts)
+            print(f'chamfer_dist: {chamfer_dist}')
+            print(f'f_score: {f_score}')
+
+    with open(os.path.join(train_dir, 'metrics.yml'), 'w') as file:
+        yaml.dump(metrics_values, file)
+        """
+        
+            gt_mesh = args.gt_mesh
             chamfer, f1, rmse, haus = compareWithGT(gt_mesh,mesh_post,scene)
 
             metrics_values['Chamfer distance'] = chamfer.item()
@@ -128,3 +149,4 @@ if __name__ == "__main__":
 
     with open(os.path.join(train_dir,'metrics.yaml'), 'w') as file:
         yaml.dump(metrics_values, file)
+        print("Save data in metrics.yaml") """

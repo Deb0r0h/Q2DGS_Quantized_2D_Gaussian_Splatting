@@ -41,7 +41,6 @@ def compute_metrics(original_points, rendered_points, threshold = 0.5):
     # HAUSDORFF
     haus = max(np.max(distance_original_rendered), np.max(distance_rendered_original))
 
-
     return chamfer,f1_score,rmse,haus
 
 # Function that returns the visible points from a collection of scene and a mesh
@@ -55,7 +54,7 @@ def find_visible_points(viewpoints, mesh):
         locations, index_ray, index_triangle = mesh.ray.intersects_location(ray_origins = rays_origin, ray_directions = rays_direction, multiple_hits = False)
         points.append(locations)
 
-        return np.concatenate(points, axis = 0)
+    return np.concatenate(points, axis = 0)
 
 # Function to compare the GT with the rendered one
 def compareWithGT(gt_mesh,mesh_post,scene):
@@ -63,8 +62,8 @@ def compareWithGT(gt_mesh,mesh_post,scene):
     triangles = np.asarray(mesh_post.triangles).tolist()
 
     original_mesh = trimesh.load_mesh(gt_mesh)
-    #Matteo : rendered_mesh = trimesh.Trimesh(vertices=vertices, triangles=triangles)
-    rendered_mesh = trimesh.load_mesh(mesh_post)
+    rendered_mesh = trimesh.Trimesh(vertices=vertices, triangles=triangles)
+    #rendered_mesh = trimesh.load_mesh(mesh_post)
 
     original_points = find_visible_points(scene.getTrainCameras(),original_mesh)
     rendered_points = find_visible_points(scene.getTrainCameras(),rendered_mesh)
