@@ -14,3 +14,4 @@ eval
 **/tmp
 dataset/
 output/
+metrics_data/metrics_table.tex

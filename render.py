@@ -118,9 +118,10 @@ if __name__ == "__main__":
         # Compute metrics for evaluation (GT vs Obtained)
         if args.gt_mesh:
             gt_mesh = args.gt_mesh
-            chamfer_dist,f_score,pcl = compare_with_GT(gt_mesh,mesh_post,scene)
+            chamfer_dist,f_score,mse,pcl = compare_with_GT(gt_mesh,mesh_post,scene)
             metrics_values['chamfer_dist'] = chamfer_dist.item()
             metrics_values['f_score'] = f_score.item()
+            metrics_values['MSE'] = mse.item()
 
     with open(os.path.join(train_dir, 'metrics.yml'), 'w') as file:
         yaml.dump(metrics_values, file)
