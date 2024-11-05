@@ -23,7 +23,6 @@ from scipy.spatial import KDTree
 
 
 def find_visible_points(viewpoint_stack, mesh):
-    print("dentro find")
     points_list = []
     for viewpoint in viewpoint_stack:
         rays_o, rays_v = gen_rays_at(viewpoint)
@@ -51,7 +50,6 @@ def chamfer_distance_and_f1_score(ref_points, eval_points, f_threshold=0.5):
     chamfer_dist (float): The chamfer distance between gt_points and eval_points.
     f_score (float): The f1 score between gt_points and eval_points.
     """
-    print("computing chamfer distance and f1 score...")
     distance_eval2gt, _ = KDTree(ref_points).query(eval_points, k=1, p=2)   # p=2 for Euclidean distance
     distance_gt2eval, _ = KDTree(eval_points).query(ref_points, k=1, p=2)
 

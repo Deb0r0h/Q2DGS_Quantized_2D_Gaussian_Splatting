@@ -124,18 +124,4 @@ if __name__ == "__main__":
 
     with open(os.path.join(train_dir, 'metrics.yml'), 'w') as file:
         yaml.dump(metrics_values, file)
-        """
-        
-            gt_mesh = args.gt_mesh
-            chamfer, f1, rmse, haus = compareWithGT(gt_mesh,mesh_post,scene)
-
-            metrics_values['Chamfer distance'] = chamfer.item()
-            metrics_values['F1-score'] = f1.item()
-            metrics_values['RMSE'] = rmse.item()
-            metrics_values['Hausdoff distance'] = haus.item()
-        else:
-            print("No ground true mesh file passed as argument")
-
-    with open(os.path.join(train_dir,'metrics.yaml'), 'w') as file:
-        yaml.dump(metrics_values, file)
-        print("Save data in metrics.yaml") """
+        print("Save data in metrics.yaml")

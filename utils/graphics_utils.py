@@ -80,7 +80,6 @@ def focal2fov(focal, pixels):
 
 # Generate all rays at world space from one camera
 def gen_rays_at(viewpoint):
-    print("dentro gen_rays_")
     try:
         c2w = (viewpoint.world_view_transform.T).inverse()
     except Exception as e:

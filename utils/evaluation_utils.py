@@ -22,6 +22,7 @@ import open3d as o3d
 
 
 def compare_with_GT(gt_mesh, post_mesh,scene):
+    print("Computing chamfer distance and F1 score...")
     vert = np.asarray(post_mesh.vertices).tolist()
     trian = np.asarray(post_mesh.triangles).tolist()
 
