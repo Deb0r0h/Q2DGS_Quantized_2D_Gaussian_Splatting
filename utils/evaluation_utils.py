@@ -1,25 +1,7 @@
-import torch
 from scene import Scene
-import os
-from tqdm import tqdm
-from os import makedirs
-from gaussian_renderer import render
-import torchvision
-from utils.general_utils import safe_state
 import trimesh
-from argparse import ArgumentParser
-from arguments import ModelParams, PipelineParams, get_combined_args
-from gaussian_renderer import GaussianModel
-from utils.mesh_utils import GaussianExtractor, to_cam_open3d, post_process_mesh, find_visible_points, chamfer_distance_and_f1_score
-from utils.render_utils import generate_path, create_videos
+from utils.mesh_utils import find_visible_points, chamfer_distance_and_f1_score
 import numpy as np
-import math
-from utils.render_utils import save_img_f32, save_img_u8
-from functools import partial
-from scipy.spatial import KDTree
-import open3d as o3d
-
-
 
 def compare_with_GT(gt_mesh, post_mesh,scene):
     print("Computing chamfer distance and F1 score...")
