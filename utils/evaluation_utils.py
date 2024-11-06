@@ -1,11 +1,11 @@
 from scene import Scene
 import trimesh
-from utils.mesh_utils import find_visible_points, chamfer_distance_and_f1_score
+from utils.mesh_utils import find_visible_points, compute_metrics
 import numpy as np
 
 
 def compare_with_GT(gt_mesh, post_mesh,scene):
-    print("Computing chamfer distance and F1 score...")
+    print("Computing metrics...")
     vert = np.asarray(post_mesh.vertices).tolist()
     trian = np.asarray(post_mesh.triangles).tolist()
 
@@ -17,7 +17,7 @@ def compare_with_GT(gt_mesh, post_mesh,scene):
 
     pcl = trimesh.points.PointCloud(gt_points)
 
-    chamfer_dist, f1_score,mse = chamfer_distance_and_f1_score(gt_points,post_points,f_threshold=0.5)
+    chamfer_dist, f1_score,mse = compute_metrics(gt_points,post_points,f_threshold=0.5)
 
     return chamfer_dist,f1_score,mse,pcl
 

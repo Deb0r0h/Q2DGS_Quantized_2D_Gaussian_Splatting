@@ -36,8 +36,8 @@ def find_visible_points(viewpoint_stack, mesh):
         points_list.append(locations)
     return np.concatenate(points_list, axis=0)
 
-#Function that calculates the chamfer distance and f1 score between two sets of points.
-def chamfer_distance_and_f1_score(ref_points, eval_points, f_threshold=0.5):
+#Function that calculates the chamfer distance, f1 score, mse between two sets of points.
+def compute_metrics(ref_points, eval_points, f_threshold=0.5):
     distance_eval2gt, _ = KDTree(ref_points).query(eval_points, k=1, p=2)   # p=2 for Euclidean distance
     distance_gt2eval, _ = KDTree(eval_points).query(ref_points, k=1, p=2)
 

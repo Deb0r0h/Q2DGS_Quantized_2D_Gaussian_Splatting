@@ -20,7 +20,7 @@ for scan_folder in os.listdir(file_path):
         print("No file metrics.yml in {}".format(scan_folder))
 
 df = pd.DataFrame(data)
-print(df.to_string(index=False))
+#print(df.to_string(index=False))
 
 # to export the latex table
 latex_table = df.to_latex(index=False,header=True,caption="Metrics on DTU dataset")
