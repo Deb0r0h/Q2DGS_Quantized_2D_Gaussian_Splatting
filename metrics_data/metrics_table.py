@@ -23,7 +23,7 @@ df = pd.DataFrame(data)
 #print(df.to_string(index=False))
 
 # to export the latex table
-latex_table = df.to_latex(index=False,header=True,caption="Metrics")
+latex_table = df.to_latex(index=False,header=True,caption="Metrics on DTU dataset")
 with open("metrics_table.tex", "w") as file:
     file.write(latex_table)
 
