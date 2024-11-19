@@ -23,8 +23,10 @@ class Camera(nn.Module):
 
         self.uid = uid
         self.colmap_id = colmap_id
-        self.R, self.T = R, T
-        self.FoVx, self.FoVy = FoVx, FoVy
+        self.R = R
+        self.T =  T
+        self.FoVx = FoVx
+        self.FoVy = FoVy
         self.image_name = image_name
         self.scale = scale
         self.trans = trans
