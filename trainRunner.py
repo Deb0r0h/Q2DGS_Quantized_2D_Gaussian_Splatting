@@ -31,3 +31,5 @@ for scan in tqdm(scans_test, desc="Training DTU dataset"):
     subprocess.run(command)
 
 print("Training completed")
+
+#tesss
