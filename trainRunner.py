@@ -32,4 +32,4 @@ for scan in tqdm(scans_test, desc="Training DTU dataset"):
 
 print("Training completed")
 
-#tesss
+#test
