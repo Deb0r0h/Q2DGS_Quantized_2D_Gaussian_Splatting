@@ -115,6 +115,8 @@ if __name__ == "__main__":
         o3d.io.write_triangle_mesh(os.path.join(train_dir, name.replace('.ply', '_post.ply')), mesh_post)
         print("mesh post processed saved at {}".format(os.path.join(train_dir, name.replace('.ply', '_post.ply'))))
 
+    compute = False
+    if compute is True:
         # Compute metrics for evaluation (GT vs Obtained)
         if args.gt_mesh:
             gt_mesh = args.gt_mesh
@@ -123,6 +125,6 @@ if __name__ == "__main__":
             metrics_values['f_score'] = f_score.item()
             metrics_values['MSE'] = mse.item()
 
-    with open(os.path.join(train_dir, 'metrics.yml'), 'w') as file:
-        yaml.dump(metrics_values, file)
-        print("Save data in metrics.yaml")
+        with open(os.path.join(train_dir, 'metrics.yml'), 'w') as file:
+            yaml.dump(metrics_values, file)
+            print("Save data in metrics.yaml")

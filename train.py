@@ -58,12 +58,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
 
+
     # TRAINING CYCLE
     for iteration in range(first_iter, opt.iterations + 1):        
 
         iter_start.record()
 
-        #Update the learing rate based on the current iteration
+        #Update the learning rate based on the current iteration
         gaussians.update_learning_rate(iteration)
 
         # Every 1000 its we increase the levels of SH up to a maximum degree 
@@ -75,6 +76,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         if not viewpoint_stack:
             viewpoint_stack = scene.getTrainCameras().copy()
         viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack)-1))
+
+        # Change the resolution every 10k iteration (3 times)
+        #res_idx = (iteration // opt.resolution_step_interval) % len(viewpoint_cam.original_image)
+        res_idx = (len(viewpoint_cam.original_image) - 1) - (iteration // opt.resolution_step_interval) % len(viewpoint_cam.original_image)
+        viewpoint_cam.change_resolution(res_idx)
         
         # Rendering based on camera and Gaussian
         render_pkg = render(viewpoint_cam, gaussians, pipe, background)
@@ -149,9 +155,34 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
+                new_policy = False
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == False:
                     size_threshold = 20 if iteration > opt.opacity_reset_interval else None
                     gaussians.densify_and_prune(opt.densify_grad_threshold, opt.opacity_cull, scene.cameras_extent, size_threshold) # add and remove points
+
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == True:
+                    gaussians.densify(opt.densify_grad_threshold, scene.cameras_extent)
+                    # prune by contribution
+                    xyz = gaussians.get_xyz
+                    # load all cameras
+                    top_k = 3
+                    viewpoint_stack = scene.getTrainCameras().copy()
+                    wc = torch.zeros((xyz.shape[0], top_k), dtype=xyz.dtype, device=xyz.device)
+                    prev = torch.clone(wc)
+                    for idx, viewpoint_cam in enumerate(viewpoint_stack):
+                        with torch.no_grad():
+                            render_pkg = render(viewpoint_cam, gaussians, pipe, background)
+                            max_weight = render_pkg['max_weight']
+                            wc[..., 0] = torch.maximum(wc[..., 0], max_weight)
+                            for i in range(1, min(idx + 1, top_k)):
+                                temp = torch.minimum(prev[..., i - 1], max_weight)
+                                wc[..., i] = torch.maximum(wc[..., i], temp)
+                            prev[...] = wc[...]
+                    wc = wc[..., -1]
+                    mask = wc < opt.weight_cull
+                    gaussians.prune_points(mask)
+
+
                 
                 if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
                     gaussians.reset_opacity()
@@ -275,6 +306,10 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
                     tb_writer.add_scalar(config['name'] + '/loss_viewpoint - psnr', psnr_test, iteration)
 
         torch.cuda.empty_cache()
+
+# Compute the resolution based on the current iteration
+def compute_dynamic_resolution(initial_resolution, max_resolution, step_resolution, current_iteration):
+    return 0
 
 if __name__ == "__main__":
     # Set up command line argument parser
