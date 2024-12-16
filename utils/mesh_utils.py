@@ -51,10 +51,7 @@ def compute_metrics(ref_points, eval_points, f_threshold=0.5):
         f_score = 0
     else:
         f_score = 2 * precision * recall / (precision + recall)
-
-    mse = np.mean(np.square(distance_eval2gt))
-
-    return chamfer_dist, f_score,mse
+    return chamfer_dist, f_score
 
 
 

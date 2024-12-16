@@ -6,6 +6,7 @@ dataset_path = 'dataset/DTU'
 output_path = 'output/date'
 depth_ratio = 0
 r_value = 2
+lambda_dist = 0
 
 scans = [
     "scan24", "scan37", "scan40", "scan55", "scan63", "scan65",
@@ -13,9 +14,9 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-scans_test = ["scan83"]
+scans_test = ["scan106"]
 
-for scan in tqdm(scans_test, desc="Training DTU dataset"):
+for scan in tqdm(scans, desc="Training DTU dataset"):
     scan_path = os.path.join(dataset_path, scan)
     output_folder = os.path.join(output_path, scan)
 
@@ -24,12 +25,11 @@ for scan in tqdm(scans_test, desc="Training DTU dataset"):
         "-s", scan_path,
         "-m", output_folder,
         "-r", str(r_value),
-        "--depth_ratio", str(depth_ratio)
+        "--depth_ratio", str(depth_ratio),
+        "--lambda_dist", str(lambda_dist)
     ]
 
     print(f"\nTraining {scan}...")
     subprocess.run(command)
 
 print("Training completed")
-
-#test

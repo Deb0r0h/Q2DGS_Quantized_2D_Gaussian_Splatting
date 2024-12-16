@@ -17,7 +17,7 @@ def compare_with_GT(gt_mesh, post_mesh,scene):
 
     pcl = trimesh.points.PointCloud(gt_points)
 
-    chamfer_dist, f1_score,mse = compute_metrics(gt_points,post_points,f_threshold=0.5)
+    chamfer_dist, f1_score = compute_metrics(gt_points,post_points,f_threshold=0.5)
 
-    return chamfer_dist,f1_score,mse,pcl
+    return chamfer_dist,f1_score,pcl
 

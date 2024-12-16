@@ -79,8 +79,10 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         # Change the resolution every 10k iteration (3 times)
         #res_idx = (iteration // opt.resolution_step_interval) % len(viewpoint_cam.original_image)
-        res_idx = (len(viewpoint_cam.original_image) - 1) - (iteration // opt.resolution_step_interval) % len(viewpoint_cam.original_image)
-        viewpoint_cam.change_resolution(res_idx)
+        change_res = False
+        if change_res is True:
+            res_idx = (len(viewpoint_cam.original_image) - 1) - (iteration // opt.resolution_step_interval) % len(viewpoint_cam.original_image)
+            viewpoint_cam.change_resolution(res_idx)
         
         # Rendering based on camera and Gaussian
         render_pkg = render(viewpoint_cam, gaussians, pipe, background)

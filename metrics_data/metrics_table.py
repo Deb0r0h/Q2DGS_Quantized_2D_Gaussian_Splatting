@@ -14,7 +14,6 @@ for scan_folder in os.listdir(file_path):
         data.append({"scan":scan_folder,
                      "f_score":metrics.get("f_score",None),
                      "Chamfer":metrics.get("chamfer_dist",None),
-                     "MSE": metrics.get("MSE", None)
                      })
     else:
         print("No file metrics.yml in {}".format(scan_folder))

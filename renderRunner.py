@@ -11,10 +11,10 @@ r_value = 2
 scans = [
     "scan24", "scan37", "scan40", "scan55", "scan63", "scan65",
     "scan69", "scan83", "scan97", "scan105", "scan106",
-    "scan110", "scan14", "scan118", "scan122"
+    "scan110", "scan114", "scan118", "scan122"
 ]
 
-scans_test = ["scan83"]
+scans_test = ["scan114"]
 
 for scan in tqdm(scans_test, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)
