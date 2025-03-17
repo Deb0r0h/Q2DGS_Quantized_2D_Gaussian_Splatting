@@ -16,18 +16,24 @@ scans = [
 
 scans_test = ["scan122"]
 
-for scan in tqdm(scans_test, desc="Rendering DTU dataset"):
+for scan in tqdm(scans, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)
     gt_mesh = os.path.join(gt_mesh_path, f"{scan}.ply")
 
+    # command = [
+    #     "python", "render.py",
+    #     "-r", str(r_value),
+    #     "--depth_ratio", str(depth_ratio),
+    #     "--skip_test",
+    #     "--skip_train",
+    #     "--model_path", output_folder,
+    #     "--gt_mesh", gt_mesh
+    # ]
+
     command = [
         "python", "render.py",
-        "-r", str(r_value),
-        "--depth_ratio", str(depth_ratio),
-        "--skip_test",
-        "--skip_train",
         "--model_path", output_folder,
-        "--gt_mesh", gt_mesh
+        "--load_quant"
     ]
 
     print(f"\nRendering {scan}...")

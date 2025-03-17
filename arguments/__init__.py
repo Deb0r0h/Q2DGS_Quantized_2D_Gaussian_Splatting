@@ -68,6 +68,16 @@ class PipelineParams(ParamGroup):
         self.compute_cov3D_python = False
         self.depth_ratio = 0.0
         self.debug = False
+
+        ### LOD ###
+        self.apply_LOD = False
+        self.lod_thres = [10.0,5.0]
+        self.lod_reduction_factors = [0.5,0.2]
+        ### LOD ###
+
+
+
+
         super().__init__(parser, "Pipeline Parameters")
 
 class OptimizationParams(ParamGroup):
@@ -93,7 +103,7 @@ class OptimizationParams(ParamGroup):
         self.densify_until_iter = 15_000
         self.densify_grad_threshold = 0.0002
 
-        self.resolution_step_interval = 10000 # per scalare la res
+        self.dynamic_resolution = False
 
         super().__init__(parser, "Optimization Parameters")
 

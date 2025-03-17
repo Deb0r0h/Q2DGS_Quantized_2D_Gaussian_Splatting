@@ -46,7 +46,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_cluster", default=50, type=int, help='Mesh: number of connected clusters to export')
     parser.add_argument("--unbounded", action="store_true", help='Mesh: using unbounded mode for meshing')
     parser.add_argument("--mesh_res", default=1024, type=int, help='Mesh: resolution for unbounded mesh extraction')
-    parser.add_argument("--gt_mesh", default="", type=str, help='GT Mesh to perform evaluation')
+    parser.add_argument("--gt_mesh", default="", type=str, help='GT Mesh file to perform evaluation')
+    parser.add_argument("--load_quant", action="store_true", help="Load quantized model")
 
     args = get_combined_args(parser)
     print("Rendering " + args.model_path)
@@ -54,9 +55,9 @@ if __name__ == "__main__":
     # Used to save the metrics from the comparison between GT and rendered
     metrics_values = {}
 
-    dataset, iteration, pipe = model.extract(args), args.iteration, pipeline.extract(args)
+    dataset, iteration, pipe, load_quant = model.extract(args), args.iteration, pipeline.extract(args), args.load_quant
     gaussians = GaussianModel(dataset.sh_degree)
-    scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False)
+    scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False,load_quant=True)
     bg_color = [1,1,1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
     
@@ -115,9 +116,9 @@ if __name__ == "__main__":
         o3d.io.write_triangle_mesh(os.path.join(train_dir, name.replace('.ply', '_post.ply')), mesh_post)
         print("mesh post processed saved at {}".format(os.path.join(train_dir, name.replace('.ply', '_post.ply'))))
 
-    compute = True
-    if compute is True:
-        # Compute metrics for evaluation (GT vs Obtained)
+    # Compute metrics for evaluation (GT vs Obtained)
+    compute = False
+    if compute:
         if args.gt_mesh:
             gt_mesh = args.gt_mesh
             chamfer_dist,f_score,pcl = compare_with_GT(gt_mesh,mesh_post,scene)

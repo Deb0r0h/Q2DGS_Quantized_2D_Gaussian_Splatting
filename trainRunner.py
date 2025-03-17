@@ -14,20 +14,22 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-scans_test = ["scan106"]
+scans_test = ["scan122"]
 
 for scan in tqdm(scans, desc="Training DTU dataset"):
     scan_path = os.path.join(dataset_path, scan)
     output_folder = os.path.join(output_path, scan)
 
     command = [
-        "python", "train.py",
+        "python", "train_quantitize_kmeans.py",
         "-s", scan_path,
         "-m", output_folder,
-        "-r", str(r_value),
-        "--depth_ratio", str(depth_ratio),
-        "--lambda_dist", str(lambda_dist)
-    ]
+        "-r", str(r_value)]
+        #"--dynamic_resolution"
+        #]
+        #"--depth_ratio", str(depth_ratio),
+        #"--lambda_dist", str(lambda_dist)
+    #]
 
     print(f"\nTraining {scan}...")
     subprocess.run(command)
