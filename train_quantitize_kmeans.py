@@ -77,12 +77,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     # freq_cls_assn = args.kmeans_freq
 
     quantized_params = ['rot','scale','sh','dc']
-    n_cls =4096
-    n_cls_sh = 512
-    n_cls_dc = 4096
-    n_it = 10
-    kmeans_st_iter = 10000
-    freq_cls_assn = 100
+    n_cls = 1024
+    n_cls_sh = 128
+    n_cls_dc = 1024
+    n_it = 30
+    kmeans_st_iter = 15000
+    freq_cls_assn = 50
 
 
     if 'pos' in quantized_params:
@@ -117,10 +117,10 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         # Above 3100 iterations the assignment frequency is 100, while above a higher threshold it is 5000
         # TODO fittare meglio questi parametri
-        if iteration > 3100:
-            freq_cls_assn = 100
+        if iteration > 3500:
+            freq_cls_assn = 500
             if iteration > (opt.iterations - 5000):
-                freq_cls_assn = 200
+                freq_cls_assn = 50
 
         # Pick a random Camera
         if not viewpoint_stack:
