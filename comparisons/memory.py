@@ -5,7 +5,7 @@ import csv
 import shutil
 
 
-def compute_ply_size(file_path, file):
+def get_ply_size(file_path, file):
     try:
         file_size = os.path.getsize(file_path + file)
         file_mb = file_size / (1024 * 1024)
@@ -13,14 +13,14 @@ def compute_ply_size(file_path, file):
     except FileNotFoundError:
         return ("File not found")
 
-def compute(file_path_base, file_path_light, file_list_base, file_list_light, output_file, type):
+def compute_comparison_file(file_path_base, file_path_light, file_list_base, file_list_light, output_file, type):
     try:
         if type == "txt":
             with open(output_file, "w") as f:
                 f.write("BASE VERSION\tLIGHT VERSION\n")
                 for base, light in zip(file_list_base, file_list_light):
-                    base_size = compute_ply_size(file_path_base, base)
-                    light_size = compute_ply_size(file_path_light, light)
+                    base_size = get_ply_size(file_path_base, base)
+                    light_size = get_ply_size(file_path_light, light)
                     base_size_str = f"{base} {base_size:.2f} MB" if base_size else "Not found"
                     light_size_str = f"{light} {light_size:.2f} MB" if light_size else "Not found"
                     f.write(f"{base_size_str}\t{light_size_str}\n")
@@ -39,27 +39,26 @@ def compute(file_path_base, file_path_light, file_list_base, file_list_light, ou
     except FileNotFoundError:
         return ("File not found")
 
-def temp():
-    file_path = "../output/date"
-    data = []
-    for scan_folder in os.listdir(file_path):
-        for file in os.listdir(os.path.join(file_path, scan_folder,"train","ours_30000")):
-            name = "fuse_post.ply"
-            if name in file:
-                size = os.path.getsize(os.path.join(file_path, scan_folder,"train","ours_30000",file))
-                size = size/(1024*1024)
-                data.append(size)
-    print(data)
-
-def bo():
+def get_ply_files_from_output():
     file_path = "../output/date"
     output_folder = "modified/"
     for scan_folder in os.listdir(file_path):
+        scan_number = scan_folder.replace('scan','',1)
         source_file = os.path.join(file_path, scan_folder,"train","ours_30000","fuse_post.ply")
-        destination_file = os.path.join(output_folder, f"{scan_folder}.ply")
+        destination_file = os.path.join(output_folder, f"{scan_number}.ply")
         shutil.copy2(source_file, destination_file)
 
+def get_list_items(file_path):
+    list = []
+    for file in os.listdir(file_path):
+        list.append(file)
+    list = sorted(list, key=lambda x : int(x.split(".")[0]))
+    return list
 
-file_path = "base/"
-file_list = ["24.ply", "37.ply", "40.ply", "55.ply", "63.ply", "65.ply", "69.ply", "83.ply", "97.ply", "105.ply","106.ply", "110.ply", "114.ply", "118.ply", "122.ply"]
 
+file_path_base = "base/"
+file_path_light = "modified/"
+file_list_base = get_list_items(file_path_base)
+file_list_light = get_list_items(file_path_light)
+
+compute_comparison_file(file_path_base, file_path_light, file_list_base, file_list_light, "out.txt", "txt")
