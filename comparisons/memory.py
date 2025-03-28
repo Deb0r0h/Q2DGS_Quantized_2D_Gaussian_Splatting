@@ -1,6 +1,4 @@
 import os
-import pandas as pd
-import yaml
 import csv
 import shutil
 
@@ -39,7 +37,7 @@ def compute_comparison_file(file_path_base, file_path_light, file_list_base, fil
     except FileNotFoundError:
         return ("File not found")
 
-def get_ply_files_from_output():
+def get_ply_files_from_output_folder():
     file_path = "../output/date"
     output_folder = "modified/"
     for scan_folder in os.listdir(file_path):
@@ -61,4 +59,5 @@ file_path_light = "modified/"
 file_list_base = get_list_items(file_path_base)
 file_list_light = get_list_items(file_path_light)
 
-compute_comparison_file(file_path_base, file_path_light, file_list_base, file_list_light, "out.txt", "txt")
+
+compute_comparison_file(file_path_base, file_path_light, file_list_base, file_list_light, "size_comparison.txt", "txt")
