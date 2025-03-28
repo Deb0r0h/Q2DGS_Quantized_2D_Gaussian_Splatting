@@ -25,9 +25,10 @@ from tqdm import tqdm
 from utils.image_utils import psnr, render_net_image
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
-from scene.quantitize_k_means2D import Quantize_kMeans
+from scene.quantitize_k_means2D import Quantize_kMeans # QUANTIZATION
 from bitarray import bitarray
 from os.path import join
+from lpm.lpm import LPM
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -76,12 +77,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     # kmeans_st_iter = args.kmeans_st_iter
     # freq_cls_assn = args.kmeans_freq
 
-    quantized_params = ['rot','scale','sh','dc']
+    quantized_params = [] #'rot','scale','sh','dc'
     n_cls = 1024
     n_cls_sh = 128
     n_cls_dc = 1024
-    n_it = 30
-    kmeans_st_iter = 15000
+    n_it = 25
+    kmeans_st_iter = 10000
     freq_cls_assn = 50
 
 
@@ -101,6 +102,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         kmeans_shdc_q = Quantize_kMeans(num_clusters=n_cls_sh, num_iters=n_it)
 
 
+    # LOCALIZED GAUSSIAN POINT MANAGEMENT
+    lmp = LPM(scene, gaussians, angle = 0)
+
+
+
     # TRAINING CYCLE
     for iteration in range(first_iter, opt.iterations + 1):
 
@@ -118,7 +124,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Above 3100 iterations the assignment frequency is 100, while above a higher threshold it is 5000
         # TODO fittare meglio questi parametri
         if iteration > 3500:
-            freq_cls_assn = 500
+            freq_cls_assn = 50
             if iteration > (opt.iterations - 5000):
                 freq_cls_assn = 50
 
@@ -128,6 +134,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack) - 1))
 
 
+        # LPM
+        #current_view_index, sampled_index = lpm.find_neighbor_cam(viewpoint_cam)
 
         # Quant parameters
         if iteration > kmeans_st_iter:

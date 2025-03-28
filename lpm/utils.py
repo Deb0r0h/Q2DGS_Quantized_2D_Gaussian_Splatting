@@ -3,7 +3,7 @@ import random
 import torchvision
 import numpy as np 
 from kornia import create_meshgrid
-from LightGlue.lightglue.utils import load_image, rbd
+from lightglue.utils import load_image, rbd
 from lpm.error_function import ssim, psnr, mse
 
 def pix2ndc(v, S):

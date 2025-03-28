@@ -7,7 +7,7 @@ from random import randint
 from torch import nn
 from utils.general_utils import inverse_sigmoid, get_expon_lr_func, build_rotation
 
-from LightGlue.lightglue import LightGlue, SuperPoint,DISK, SIFT
+from lightglue import LightGlue, SuperPoint,DISK, SIFT
 
 from lpm.zones_projection import get_points_in_cones, zones3d_projection
 from lpm.utils import get_errormap, set_rays, get_paired_views
