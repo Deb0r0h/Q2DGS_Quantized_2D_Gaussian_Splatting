@@ -730,7 +730,7 @@ class GaussianModel:
                 self.depth_gradient_accum[update_filter] += gaussian_depth_grad.unsqueeze(-1)
         self.denom[update_filter] += 1
 
-    # TODO non è presente nè in 3DGS che in 2DGS, serve per opacity_regulation
+    # TODO non è presente in 3DGS e 2DGS, serve per opacity_regulation
     # copy the prune elements in densify_and_prune
     def prune(self, min_opacity, extent, max_screen_size):
         prune_mask = (self.get_opacity < min_opacity).squeeze()

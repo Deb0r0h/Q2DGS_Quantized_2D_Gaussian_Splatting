@@ -14,11 +14,12 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-scans_test = ["scan122"]
+scans_test = ["scan24"]
 
-#testoli = ["scan24", "scan37", "scan40", "scan55", "scan63"]
-testoli = ["scan69", "scan83", "scan97", "scan105", "scan106"]
+testoli = ["scan24", "scan37", "scan40", "scan55", "scan63"]
+#testoli = ["scan69", "scan83", "scan97", "scan105", "scan106"]
 #testoli = ["scan110", "scan114", "scan118", "scan122"]
+testoli = ["scan24", "scan37", "scan40"]
 
 for scan in tqdm(testoli, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)

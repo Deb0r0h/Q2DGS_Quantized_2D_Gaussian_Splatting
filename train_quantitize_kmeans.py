@@ -63,6 +63,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     ema_loss_for_log = 0.0
     ema_dist_for_log = 0.0
     ema_normal_for_log = 0.0
+    ema_opacity_for_log = 0.0
 
     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
     first_iter += 1
@@ -77,12 +78,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     # kmeans_st_iter = args.kmeans_st_iter
     # freq_cls_assn = args.kmeans_freq
 
-    quantized_params = [] #'rot','scale','sh','dc'
-    n_cls = 1024
+    quantized_params = ['rot','scale','sh','dc'] #'rot','scale','sh','dc'
+    n_cls = 1000
     n_cls_sh = 128
-    n_cls_dc = 1024
-    n_it = 25
-    kmeans_st_iter = 10000
+    n_cls_dc = 1000
+    n_it = 20
+    kmeans_st_iter = 20000
     freq_cls_assn = 50
 
 
@@ -126,7 +127,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         if iteration > 3500:
             freq_cls_assn = 50
             if iteration > (opt.iterations - 5000):
-                freq_cls_assn = 50
+                freq_cls_assn = 100
 
         # Pick a random Camera
         if not viewpoint_stack:
@@ -135,7 +136,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
 
         # LPM
-        current_view_index, sampled_index = lpm.find_neighbor_cam(viewpoint_cam)
+        #current_view_index, sampled_index = lpm.find_neighbor_cam(viewpoint_cam)
 
         # Quant parameters
         if iteration > kmeans_st_iter:
@@ -180,18 +181,22 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         # L1 loss between render and gt + SSIM (structural similarity index to improve visual quality)
         Ll1 = l1_loss(image, gt_image)
+
+
+
+
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
 
 
         # TODO immondizia
         ### GEOMETRY PART ###
         # Store geometric information
-        gaussians.last_depth = render_pkg['surf_depth'].detach()
-        gaussians.last_normal = render_pkg['surf_normal'].detach()
-        # New geometric regularization loss
-        depth_geo = torch.exp(-10 * torch.abs(render_pkg['surf_depth'] - render_pkg['render_depth_expected']))
-        normal_geo = (render_pkg['surf_normal'] * render_pkg['rend_normal']).sum(dim=0)
-        geometry_loss = 0.1 * (1 - depth_geo.mean()) + 0.1 * (1 - normal_geo.mean())
+        # gaussians.last_depth = render_pkg['surf_depth'].detach()
+        # gaussians.last_normal = render_pkg['surf_normal'].detach()
+        # # New geometric regularization loss
+        # depth_geo = torch.exp(-10 * torch.abs(render_pkg['surf_depth'] - render_pkg['render_depth_expected']))
+        # normal_geo = (render_pkg['surf_normal'] * render_pkg['rend_normal']).sum(dim=0)
+        # geometry_loss = 0.1 * (1 - depth_geo.mean()) + 0.1 * (1 - normal_geo.mean())
         ### GEOMETRY PART ###
 
 
@@ -214,9 +219,27 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         # TODO aggiungere opacity loss
 
+        # Opacity regulation
+        opacity_regulation = True
+        lambda_val = 1e-7 # passare da terminale
+        max_prune_opacity = 20000 # passare da terminale
+        opacity_loss = 0
+        total_loss = 0
+        if opacity_regulation:
+            if iteration > max_prune_opacity or iteration < 15000:
+                lambda_coefficient = 0
+            else:
+                lambda_coefficient = lambda_val
+            opacity_sum = gaussians.get_opacity.sum()
+            opacity_loss = lambda_coefficient * opacity_sum
+            total_loss = loss + dist_loss + normal_loss + opacity_loss
+        else:
+            total_loss = loss + dist_loss + normal_loss
+
+
 
         # FINAL LOSS
-        total_loss = loss + dist_loss + normal_loss
+        #total_loss = loss + dist_loss + normal_loss
 
         # Compute the gradient
         total_loss.backward()
@@ -231,6 +254,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             ema_loss_for_log = 0.4 * loss.item() + 0.6 * ema_loss_for_log
             ema_dist_for_log = 0.4 * dist_loss.item() + 0.6 * ema_dist_for_log
             ema_normal_for_log = 0.4 * normal_loss.item() + 0.6 * ema_normal_for_log
+            ema_opacity_for_log = 0.4 * opacity_loss.item() + 0.6 * ema_opacity_for_log
 
             # Every 10 iteration the values in the progress bar are updated
             if iteration % 10 == 0:
@@ -238,6 +262,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     "Loss": f"{ema_loss_for_log:.{5}f}",
                     "distort": f"{ema_dist_for_log:.{5}f}",
                     "normal": f"{ema_normal_for_log:.{5}f}",
+                    "opacity": f"{ema_opacity_for_log:.{5}f}",
                     "Points": f"{len(gaussians.get_xyz)}"
                 }
                 progress_bar.set_postfix(loss_dict)
@@ -257,84 +282,93 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
             if (iteration in saving_iterations):
 
-                print(args.model_path)
-                # print(f'PSNR Train: {psnr_train}, PSNR Test: {psnr_test}')
-                print("\n[ITER {}] Saving Gaussians".format(iteration))
-                # Save only the non-quantized parameters in ply file.
-                all_attributes = {'xyz': 'xyz', 'dc': 'f_dc', 'sh': 'f_rest', 'opacities': 'opacities',
-                                  'scale': 'scale', 'rot': 'rotation', 'pos': 'position'}
-                save_attributes = [val for (key, val) in all_attributes.items() if key not in quantized_params]
-                if iteration > kmeans_st_iter:
-                    scene.save(iteration, save_q=quantized_params, save_attributes=save_attributes)
+                apply_quant = True
+                if apply_quant:
+                    print(args.model_path)
+                    # print(f'PSNR Train: {psnr_train}, PSNR Test: {psnr_test}')
+                    print("\n[ITER {}] Saving Gaussians".format(iteration))
+                    # Save only the non-quantized parameters in ply file.
+                    all_attributes = {'xyz': 'xyz', 'dc': 'f_dc', 'sh': 'f_rest', 'opacities': 'opacities',
+                                      'scale': 'scale', 'rot': 'rotation', 'pos': 'position'}
+                    save_attributes = [val for (key, val) in all_attributes.items() if key not in quantized_params]
+                    if iteration > kmeans_st_iter:
+                        scene.save(iteration, save_q=quantized_params, save_attributes=save_attributes)
 
-                    # Save indices and codebook for quantized parameters
-                    kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
-                    #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'scale_rot': kmeans_scrot_q, 'sh_dc': kmeans_shdc_q}
-                    kmeans_list = []
-                    for param in quantized_params:
-                        kmeans_list.append(kmeans_dict[param])
-                    out_dir = join(scene.model_path, 'point_cloud/iteration_%d' % iteration) # Model PATH output/date/scan40 + pointcloud/iterationXXXXX
-                    save_kmeans(kmeans_list, quantized_params, out_dir)
+                        # Save indices and codebook for quantized parameters
+                        kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
+                        #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'scale_rot': kmeans_scrot_q, 'sh_dc': kmeans_shdc_q}
+                        kmeans_list = []
+                        for param in quantized_params:
+                            kmeans_list.append(kmeans_dict[param])
+                        out_dir = join(scene.model_path, 'point_cloud/iteration_%d' % iteration) # Model PATH output/date/scan40 + pointcloud/iterationXXXXX
+                        save_kmeans(kmeans_list, quantized_params, out_dir)
+                    else:
+                        scene.save(iteration, save_q=[])
+                # prima c'erano solo loro e scene.save(iteration)
                 else:
-                    scene.save(iteration, save_q=[])
-
-                # prima c'erano solo loro
-                #print("\n[ITER {}] Saving Gaussians".format(iteration))
-                #scene.save(iteration)
+                    print("\n[ITER {}] Saving Gaussians".format(iteration))
+                    scene.save(iteration,save_q=[])
 
             # DENSIFICATION: new Gaussian points are added to improve the representation of the model
             if iteration < opt.densify_until_iter:
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-                new_policy = 1
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == 2: # ORIGINAL
+                new_policy = False
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == False: # ORIGINAL
                     size_threshold = 20 if iteration > opt.opacity_reset_interval else None
                     gaussians.densify_and_prune(opt.densify_grad_threshold, opt.opacity_cull, scene.cameras_extent,size_threshold)  # add and remove points
 
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == 2: # MATTEO
-                    gaussians.densify(opt.densify_grad_threshold, scene.cameras_extent)
-                    # prune by contribution
-                    xyz = gaussians.get_xyz
-                    # load all cameras
-                    top_k = 3
-                    viewpoint_stack = scene.getTrainCameras().copy()
-                    wc = torch.zeros((xyz.shape[0], top_k), dtype=xyz.dtype, device=xyz.device)
-                    prev = torch.clone(wc)
-                    for idx, viewpoint_cam in enumerate(viewpoint_stack):
-                        with torch.no_grad():
-                            render_pkg = render(viewpoint_cam, gaussians, pipe, background)
-                            max_weight = render_pkg['max_weight']
-                            wc[..., 0] = torch.maximum(wc[..., 0], max_weight)
-                            for i in range(1, min(idx + 1, top_k)):
-                                temp = torch.minimum(prev[..., i - 1], max_weight)
-                                wc[..., i] = torch.maximum(wc[..., i], temp)
-                            prev[...] = wc[...]
-                    wc = wc[..., -1]
-                    mask = wc < opt.weight_cull
-                    gaussians.prune_points(mask)
+                # if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == True: # MATTEO
+                #     gaussians.densify(opt.densify_grad_threshold, scene.cameras_extent)
+                #     # prune by contribution
+                #     xyz = gaussians.get_xyz
+                #     # load all cameras
+                #     top_k = 3
+                #     viewpoint_stack = scene.getTrainCameras().copy()
+                #     wc = torch.zeros((xyz.shape[0], top_k), dtype=xyz.dtype, device=xyz.device)
+                #     prev = torch.clone(wc)
+                #     for idx, viewpoint_cam in enumerate(viewpoint_stack):
+                #         with torch.no_grad():
+                #             render_pkg = render(viewpoint_cam, gaussians, pipe, background)
+                #             max_weight = render_pkg['max_weight']
+                #             wc[..., 0] = torch.maximum(wc[..., 0], max_weight)
+                #             for i in range(1, min(idx + 1, top_k)):
+                #                 temp = torch.minimum(prev[..., i - 1], max_weight)
+                #                 wc[..., i] = torch.maximum(wc[..., i], temp)
+                #             prev[...] = wc[...]
+                #     wc = wc[..., -1]
+                #     mask = wc < opt.weight_cull
+                #     gaussians.prune_points(mask)
 
                 ### LOD ### immondizia
                 if pipe.apply_LOD:
                     gaussians.apply_LOD(viewpoint_cam, pipe.lod_thres, pipe.lod_reduction_factors)
                 ### LOD ###
 
-                #if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
-                    #gaussians.reset_opacity()
-
-                # TODO azione della opacity regolation
-
-
-                # LPM
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-                    size_threshold = 20 if iteration > opt.opacity_reset_interval else None
-                    lpm.points_addition(opt.densify_grad_threshold, size_threshold, viewpoint_cam,current_view_index, sampled_index, image, gt_image)
-
                 if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
                     gaussians.reset_opacity()
 
-            if iteration > opt.reset_from_iter and iteration % opt.reset_interval == 0 and iteration < opt.reset_until_iter:
-                lpm.points_calibration(opt.densify_grad_threshold, viewpoint_cam, current_view_index, sampled_index,image, gt_image)
+                # TODO azione della opacity regolation
+                if opacity_regulation and iteration > 15000:
+                    if iteration <= max_prune_opacity and iteration % 1000 == 0:
+                        print('Number of gaussian before:', gaussians._xyz.shape[0])
+                        thresh = None
+                        gaussians.prune(0.005,scene.cameras_extent,thresh)
+                        print('Number of gaussian after pruning:', gaussians._xyz.shape[0])
+
+
+
+                # LPM
+            #     if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
+            #         size_threshold = 20 if iteration > opt.opacity_reset_interval else None
+            #         lpm.points_addition(opt.densify_grad_threshold, size_threshold, viewpoint_cam,current_view_index, sampled_index, image, gt_image)
+            #
+            #     if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
+            #         gaussians.reset_opacity()
+            #
+            # if iteration > opt.reset_from_iter and iteration % opt.reset_interval == 0 and iteration < opt.reset_until_iter:
+            #     lpm.points_calibration(opt.densify_grad_threshold, viewpoint_cam, current_view_index, sampled_index,image, gt_image)
 
 
 
@@ -351,7 +385,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         # NEW
         number_of_gaussian_per_iter.append(gaussians.get_xyz.shape[0])
-        if iteration == 29999:
+        if iteration == 30000:
             print("NUMBER OF GAUSSIAN AT THE FINAL ITERATION: ", gaussians._xyz.shape[0])
         np.save(f'{scene.model_path}/num_g_per_iters.npy', np.array(number_of_gaussian_per_iter))
 
@@ -508,6 +542,8 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
                     tb_writer.add_scalar(config['name'] + '/loss_viewpoint - l1_loss', l1_test, iteration)
                     tb_writer.add_scalar(config['name'] + '/loss_viewpoint - psnr', psnr_test, iteration)
 
+        if tb_writer:
+            tb_writer.add_histogram("scene/opacity_histogram",scene.gaussians.get_opacity, iteration)
         torch.cuda.empty_cache()
 
 

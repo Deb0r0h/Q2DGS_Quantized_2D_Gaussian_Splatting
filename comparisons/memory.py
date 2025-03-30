@@ -59,5 +59,5 @@ file_path_light = "modified/"
 file_list_base = get_list_items(file_path_base)
 file_list_light = get_list_items(file_path_light)
 
-
-compute_comparison_file(file_path_base, file_path_light, file_list_base, file_list_light, "size_comparison.txt", "txt")
+get_ply_files_from_output_folder()
+#compute_comparison_file(file_path_base, file_path_light, file_list_base, file_list_light, "size_comparison.txt", "txt")
