@@ -70,22 +70,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
 
     number_of_gaussian_per_iter = []
-    # quantized_params = args.quant_params
-    # n_cls = args.kmeans_ncls
-    # n_cls_sh = args.kmeans_ncls_sh
-    # n_cls_dc = args.kmeans_ncls_dc
-    # n_it = args.kmeans_iters
-    # kmeans_st_iter = args.kmeans_st_iter
-    # freq_cls_assn = args.kmeans_freq
-
-    quantized_params = ['rot','scale','sh','dc'] #'rot','scale','sh','dc'
-    n_cls = 1000
-    n_cls_sh = 128
-    n_cls_dc = 1000
-    n_it = 20
-    kmeans_st_iter = 20000
-    freq_cls_assn = 50
-
+    quantized_params = opt.quantized_params
+    n_cls = opt.n_cls
+    n_cls_sh = opt.n_cls_sh
+    n_cls_dc = opt.n_cls_dc
+    n_it = opt.n_it
+    kmeans_st_iter = opt.kmeans_st_iter
+    freq_cls_assn = opt.freq_cls_assn
 
     if 'pos' in quantized_params:
         kmeans_pos_q = Quantize_kMeans(num_clusters=n_cls_dc, num_iters=n_it)
@@ -104,7 +95,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
 
     # LOCALIZED GAUSSIAN POINT MANAGEMENT
-    lmp = LPM(scene, gaussians, angle = 0)
+    #lpm = LPM(scene, gaussians, angle = 90) # try with 45
 
 
 
@@ -125,9 +116,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Above 3100 iterations the assignment frequency is 100, while above a higher threshold it is 5000
         # TODO fittare meglio questi parametri
         if iteration > 3500:
-            freq_cls_assn = 50
+            freq_cls_assn = 100
             if iteration > (opt.iterations - 5000):
-                freq_cls_assn = 100
+                freq_cls_assn = opt.freq_at_the_end
 
         # Pick a random Camera
         if not viewpoint_stack:
@@ -221,15 +212,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         # Opacity regulation
         opacity_regulation = True
-        lambda_val = 1e-7 # passare da terminale
-        max_prune_opacity = 20000 # passare da terminale
-        opacity_loss = 0
-        total_loss = 0
+        #opacity_loss = 0
+        #total_loss = 0
         if opacity_regulation:
-            if iteration > max_prune_opacity or iteration < 15000:
+            if iteration > opt.max_prune_opacity or iteration < opt.opacity_start_iter:
                 lambda_coefficient = 0
             else:
-                lambda_coefficient = lambda_val
+                lambda_coefficient = opt.lambda_opacity
             opacity_sum = gaussians.get_opacity.sum()
             opacity_loss = lambda_coefficient * opacity_sum
             total_loss = loss + dist_loss + normal_loss + opacity_loss
@@ -250,7 +239,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         with torch.no_grad():
 
             # PROGRESS BAR
-            # Ituses an exponential moving average (EMA) to get a smoothed version of the metrics
+            # It uses an exponential moving average (EMA) to get a smoothed version of the metrics
             ema_loss_for_log = 0.4 * loss.item() + 0.6 * ema_loss_for_log
             ema_dist_for_log = 0.4 * dist_loss.item() + 0.6 * ema_dist_for_log
             ema_normal_for_log = 0.4 * normal_loss.item() + 0.6 * ema_normal_for_log
@@ -295,18 +284,23 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         scene.save(iteration, save_q=quantized_params, save_attributes=save_attributes)
 
                         # Save indices and codebook for quantized parameters
-                        kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
+                        #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
                         #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'scale_rot': kmeans_scrot_q, 'sh_dc': kmeans_shdc_q}
+                        #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh_dc': kmeans_shdc_q}
+                        kmeans_dict = {'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
                         kmeans_list = []
                         for param in quantized_params:
                             kmeans_list.append(kmeans_dict[param])
                         out_dir = join(scene.model_path, 'point_cloud/iteration_%d' % iteration) # Model PATH output/date/scan40 + pointcloud/iterationXXXXX
                         save_kmeans(kmeans_list, quantized_params, out_dir)
+
+                        print("\n[ITER {}] Saving Gaussians (quant)".format(iteration))
                     else:
                         scene.save(iteration, save_q=[])
+
                 # prima c'erano solo loro e scene.save(iteration)
                 else:
-                    print("\n[ITER {}] Saving Gaussians".format(iteration))
+                    print("\n[ITER {}] Saving Gaussians (NO quant)".format(iteration))
                     scene.save(iteration,save_q=[])
 
             # DENSIFICATION: new Gaussian points are added to improve the representation of the model
@@ -346,18 +340,18 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     gaussians.apply_LOD(viewpoint_cam, pipe.lod_thres, pipe.lod_reduction_factors)
                 ### LOD ###
 
+
+                # Togliere per lpm
                 if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
                     gaussians.reset_opacity()
 
                 # TODO azione della opacity regolation
-                if opacity_regulation and iteration > 15000:
-                    if iteration <= max_prune_opacity and iteration % 1000 == 0:
-                        print('Number of gaussian before:', gaussians._xyz.shape[0])
+                if opacity_regulation and iteration > opt.opacity_start_iter:
+                    if iteration <= opt.max_prune_opacity and iteration % opt.opacity_pruning == 0:
+                        #print('NUMBER OF GAUSS BEFORE PRUNING (opacity):', gaussians._xyz.shape[0])
                         thresh = None
-                        gaussians.prune(0.005,scene.cameras_extent,thresh)
-                        print('Number of gaussian after pruning:', gaussians._xyz.shape[0])
-
-
+                        gaussians.prune(opt.min_opacity_threshold,scene.cameras_extent,thresh)
+                        #print('NUMBER OF GAUSS AFTER PRUNING (opacity):', gaussians._xyz.shape[0])
 
                 # LPM
             #     if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:

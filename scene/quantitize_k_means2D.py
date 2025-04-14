@@ -57,7 +57,6 @@ class Quantize_kMeans():
         self.centers /= (self.cluster_len + 1e-6) # Division by num_points in cluster is done during the one-shot averaging of all
 
     # Update the clusters centroids using mask matrix multiplication from the distance matrix
-    # (ho tolto nn_index=None dai parametri perchè non usato)
     def update_centers_with_mask(self, features, cluster_mask=None, nn_index = None ,avg=False):
         features = features.detach().reshape(-1, self.vec_dim)
         centers = (cluster_mask.T @ features)

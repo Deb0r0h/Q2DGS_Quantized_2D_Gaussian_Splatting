@@ -327,8 +327,8 @@ class GaussianModel:
             if save_attributes is None:
                 save_attributes = list(all_attributes.keys())
             dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes_q(save_attributes)]
-            #print('non-quantized attributes: ', save_attributes)
-            #print('quantized attributes: ', save_q)
+            print('non-quantized attributes: ', save_attributes)
+            print('quantized attributes: ', save_q)
 
             elements = np.empty(xyz.shape[0], dtype=dtype_full)
             attributes = np.concatenate(tuple([val for (key, val) in all_attributes.items() if key in save_attributes]),axis=1)
@@ -428,8 +428,8 @@ class GaussianModel:
         # SET THE SH DEGREE MAX
         self.active_sh_degree = self.max_sh_degree
 
-    # TODO questa in realtà è quella nuovo
-    def load_ply(self, path, load_quant = False):
+    # TODO  nuova
+    def load_ply(self, path, load_quant = True):
         plydata = PlyData.read(path)
         quant_params = []
 
@@ -457,11 +457,16 @@ class GaussianModel:
 
         if 'xyz' in quant_params:
             xyz = np.expand_dims(codebook['xyz'][indices_dict['xyz']].cpu().numpy(), -1)
+            num_g_codebook = len(indices_dict['xyz'])
+            print("NUMERO GAUSSAINE IN CODEBOOK ", num_g_codebook)
         else:
             xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                             np.asarray(plydata.elements[0]["y"]),
                             np.asarray(plydata.elements[0]["z"])), axis=1)
             opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
+
+            num_g_from_ply = xyz.shape[0]
+            print("NUMERO GAUSSAINE IN PLY ", num_g_from_ply)
 
         if 'dc' in quant_params:
             features_dc = np.expand_dims(codebook['dc'][indices_dict['dc']].cpu().numpy(), -1)
@@ -516,6 +521,8 @@ class GaussianModel:
         self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
 
         self.active_sh_degree = self.max_sh_degree
+
+        print("NUMERO DI GAUSSIANE CARICATE ", self._xyz.shape[0])
 
     # Replace a tensor, used when a tensor is update or modified and we want to train the model with the new tensor
     # but keeping the state of the optimizer for that parameter (the param_group are as usually xyz, SH, opacity, ...)

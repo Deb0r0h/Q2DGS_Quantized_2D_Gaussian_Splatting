@@ -76,8 +76,12 @@ class Scene:
         
         if self.loaded_iter:
             self.gaussians.load_ply(os.path.join(self.model_path,"point_cloud","iteration_" + str(self.loaded_iter),"point_cloud.ply"),load_quant)
+            val = self.gaussians._xyz.shape[0]
+            print("GAUSSIANE IN LOAD_PLY ",val)
         else:
             self.gaussians.create_from_pcd(scene_info.point_cloud, self.cameras_extent)
+            val = self.gaussians._xyz.shape[0]
+            print("GAUSSIANE IN CREATE_FROM_PCD ", val)
 
     def save(self, iteration, save_q=[], save_attributes=None):
         point_cloud_path = os.path.join(self.model_path, "point_cloud/iteration_{}".format(iteration))

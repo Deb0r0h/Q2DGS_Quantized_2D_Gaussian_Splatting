@@ -88,7 +88,7 @@ class OptimizationParams(ParamGroup):
         self.position_lr_delay_mult = 0.01
         self.position_lr_max_steps = 30_000
         self.feature_lr = 0.0025
-        self.opacity_lr = 0.05
+        self.opacity_lr =  0.05
         self.scaling_lr = 0.005
         self.rotation_lr = 0.001
         self.percent_dense = 0.01
@@ -97,13 +97,35 @@ class OptimizationParams(ParamGroup):
         self.lambda_normal = 0.05
         self.opacity_cull = 0.05
 
-        self.densification_interval = 100
+        self.densification_interval =  500 #100
         self.opacity_reset_interval = 3000
         self.densify_from_iter = 500
-        self.densify_until_iter = 15_000
-        self.densify_grad_threshold = 0.0002
+        self.densify_until_iter = 3_000 #15_000
+        self.densify_grad_threshold = 0.00045 #0.0002
 
         self.dynamic_resolution = False
+
+        # opacity regulation
+        self.max_prune_opacity = 20_000
+        self.opacity_start_iter = 15_000
+        self.lambda_opacity = 1e-7
+        self.min_opacity_threshold = 0.1
+        self.opacity_pruning = 1000
+
+        # quantization
+        self.n_cls = 1024
+        self.n_cls_sh = 200
+        self.n_cls_dc = 200
+        self.n_it = 5
+        self.kmeans_st_iter = 20_000
+        self.freq_cls_assn = 50
+        self.freq_at_the_end = 50
+        self.quantized_params =  ['sh', 'dc'] #['rot', 'scale', 'sh', 'dc']
+
+        # lpm
+        #self.reset_from_iter = 500
+        #self.reset_until_iter = 15_000
+        #self.reset_interval = 200
 
         super().__init__(parser, "Optimization Parameters")
 
