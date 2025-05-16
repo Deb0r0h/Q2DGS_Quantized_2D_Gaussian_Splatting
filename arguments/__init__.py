@@ -91,8 +91,8 @@ class OptimizationParams(ParamGroup):
         self.densification_interval =  200 #100
         self.opacity_reset_interval = 3000
         self.densify_from_iter = 500
-        self.densify_until_iter = 10_000 #15_000
-        self.densify_grad_threshold = 0.0002 #0.0002
+        self.densify_until_iter = 15_000 #15_000
+        self.densify_grad_threshold = 0.0001 #0.0002
 
         #Dynamic resolution: change every 10k
         self.dynamic_resolution = True
@@ -107,15 +107,15 @@ class OptimizationParams(ParamGroup):
         # quantization
         self.n_cls = 1000
         self.n_cls_sh = 200
-        self.n_cls_dc = 500
+        self.n_cls_dc = 200
         self.n_it = 5
         self.kmeans_st_iter = 20_000
-        self.freq_cls_assn = 50
-        self.freq_at_the_end = 50
+        self.freq_cls_assn = 100
+        self.freq_at_the_end = 100
         self.quantized_params =  ['rot', 'scale', 'sh', 'dc'] #['sh', 'dc'] #['rot', 'scale', 'sh', 'dc']
 
         # new policy
-        self.weight_cull = 0.05
+        self.weight_cull = 0.045 #0.05
 
         super().__init__(parser, "Optimization Parameters")
 

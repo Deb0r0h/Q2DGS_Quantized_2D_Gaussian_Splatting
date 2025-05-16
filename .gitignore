@@ -17,3 +17,4 @@ dataset/
 output/
 metrics_data/metrics_table.tex
 /submodules/
+/submodules/simple-knn/

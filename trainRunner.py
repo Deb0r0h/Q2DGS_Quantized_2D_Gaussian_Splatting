@@ -18,13 +18,13 @@ scans_test = ["scan97"]
 #testoli = ["scan24", "scan37", "scan40", "scan55", "scan63"]
 
 #testoli = ["scan69", "scan83", "scan97", "scan105", "scan106"]
-testoli = ["scan24", "scan37", "scan40"]
+testoli = ["scan24", "scan37", "scan40","scan55","scan63"]
 #testoli = ["scan69", "scan83"]
-test = ["scan65"]
+test = ["scan97"]
 
 #testoli = ["scan110", "scan114", "scan118", "scan122"]
 
-for scan in tqdm(test, desc="Training DTU dataset"):
+for scan in tqdm(testoli, desc="Training DTU dataset"):
     scan_path = os.path.join(dataset_path, scan)
     output_folder = os.path.join(output_path, scan)
 
@@ -38,6 +38,7 @@ for scan in tqdm(test, desc="Training DTU dataset"):
     depth_ratio = 1
     r_value = 2
     lambda_dist = 1000
+    eval_cosa= "1,9,18,27,36,45"
     command_mod = [
         "python", "train_quantitize_kmeans.py",
         "-s", scan_path,

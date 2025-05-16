@@ -58,6 +58,7 @@ if __name__ == "__main__":
     dataset, iteration, pipe, load_quant = model.extract(args), args.iteration, pipeline.extract(args), args.load_quant
     gaussians = GaussianModel(dataset.sh_degree)
     scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False,load_quant=True)
+    print("LENNNNNNNNNNNNNNNNNNNNNNN:", len(scene.getTestCameras()))
     bg_color = [1,1,1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
     
@@ -69,13 +70,13 @@ if __name__ == "__main__":
         os.makedirs(train_dir, exist_ok=True)
         gaussExtractor.reconstruction(scene.getTrainCameras())
         gaussExtractor.export_image(train_dir)
-        
-    
+
     if (not args.skip_test) and (len(scene.getTestCameras()) > 0):
         print("export rendered testing images ...")
         os.makedirs(test_dir, exist_ok=True)
         gaussExtractor.reconstruction(scene.getTestCameras())
         gaussExtractor.export_image(test_dir)
+
     
     
     if args.render_path:

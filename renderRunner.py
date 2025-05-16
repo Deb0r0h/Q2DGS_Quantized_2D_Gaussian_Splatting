@@ -20,8 +20,9 @@ scans_test = ["scan69"]
 #testoli = ["scan69", "scan83", "scan97", "scan105", "scan106"]
 #testoli = ["scan110", "scan114", "scan118", "scan122"]
 #testoli = ["scan69", "scan83"]
-test = ["scan65"]
-testoli = ["scan24", "scan37", "scan40"]
+test = ["scan97"]
+#testoli = ["scan24", "scan37", "scan40"]
+testoli = ["scan24", "scan37", "scan40","scan55","scan63"]
 
 for scan in tqdm(testoli, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)
@@ -40,8 +41,6 @@ for scan in tqdm(testoli, desc="Rendering DTU dataset"):
     command = [
         "python", "render.py",
         "--model_path", output_folder,
-        "--skip_test",
-        "--skip_train",
         "--load_quant"
     ]
 
