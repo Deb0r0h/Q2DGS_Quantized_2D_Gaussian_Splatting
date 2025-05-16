@@ -69,15 +69,6 @@ class PipelineParams(ParamGroup):
         self.depth_ratio = 0.0
         self.debug = False
 
-        ### LOD ###
-        self.apply_LOD = False
-        self.lod_thres = [10.0,5.0]
-        self.lod_reduction_factors = [0.5,0.2]
-        ### LOD ###
-
-
-
-
         super().__init__(parser, "Pipeline Parameters")
 
 class OptimizationParams(ParamGroup):
@@ -97,13 +88,14 @@ class OptimizationParams(ParamGroup):
         self.lambda_normal = 0.05
         self.opacity_cull = 0.05
 
-        self.densification_interval =  500 #100
+        self.densification_interval =  200 #100
         self.opacity_reset_interval = 3000
         self.densify_from_iter = 500
-        self.densify_until_iter = 3_000 #15_000
-        self.densify_grad_threshold = 0.00045 #0.0002
+        self.densify_until_iter = 10_000 #15_000
+        self.densify_grad_threshold = 0.0002 #0.0002
 
-        self.dynamic_resolution = False
+        #Dynamic resolution: change every 10k
+        self.dynamic_resolution = True
 
         # opacity regulation
         self.max_prune_opacity = 20_000
@@ -113,19 +105,17 @@ class OptimizationParams(ParamGroup):
         self.opacity_pruning = 1000
 
         # quantization
-        self.n_cls = 1024
+        self.n_cls = 1000
         self.n_cls_sh = 200
-        self.n_cls_dc = 200
+        self.n_cls_dc = 500
         self.n_it = 5
         self.kmeans_st_iter = 20_000
         self.freq_cls_assn = 50
         self.freq_at_the_end = 50
-        self.quantized_params =  ['sh', 'dc'] #['rot', 'scale', 'sh', 'dc']
+        self.quantized_params =  ['rot', 'scale', 'sh', 'dc'] #['sh', 'dc'] #['rot', 'scale', 'sh', 'dc']
 
-        # lpm
-        #self.reset_from_iter = 500
-        #self.reset_until_iter = 15_000
-        #self.reset_interval = 200
+        # new policy
+        self.weight_cull = 0.05
 
         super().__init__(parser, "Optimization Parameters")
 

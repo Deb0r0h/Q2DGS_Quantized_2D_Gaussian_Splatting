@@ -9,6 +9,7 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 from torch import nn
+from os.path import join
 
 
 class Quantize_kMeans():
@@ -253,6 +254,5 @@ class Quantize_kMeans():
         deg = gaussian._features_rest.shape[1]
         sampled_centers = torch.gather(self.centers, 0, self.nn_index.unsqueeze(-1).repeat(1, self.vec_dim))
         gaussian._features_rest = gaussian._features_rest - gaussian._features_rest.detach() + sampled_centers.reshape(-1, deg, 3)
-
 
 

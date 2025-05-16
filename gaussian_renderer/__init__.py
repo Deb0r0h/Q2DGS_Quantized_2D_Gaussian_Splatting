@@ -16,9 +16,6 @@ from scene.gaussian_model import GaussianModel
 from utils.sh_utils import eval_sh
 from utils.point_utils import depth_to_normal
 
-from kornia.filters import sobel #NEW PER GRAD
-
-
 
 def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, scaling_modifier=1.0,
            override_color=None):
@@ -38,14 +35,6 @@ def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, sc
     # Set up rasterization configuration
     tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
     tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-
-
-    ### LOD ###
-    """
-    if pipe.apply_LOD:
-        pc.apply_LOD(viewpoint_camera, pipe.lod_thres, pipe.lod_reduction_factors)
-    ### LOD ###
-    """
 
     raster_settings = GaussianRasterizationSettings(
         image_height=int(viewpoint_camera.image_height),
@@ -108,7 +97,7 @@ def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, sc
     else:
         colors_precomp = override_color
 
-    rendered_image, radii, allmap = rasterizer(
+    rendered_image, radii, allmap, max_weight = rasterizer(
         means3D=means3D,
         means2D=means2D,
         shs=shs,
@@ -121,10 +110,14 @@ def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, sc
 
     # Those Gaussians that were frustum culled or had a radius of 0 were not visible.
     # They will be excluded from value updates used in the splitting criteria.
+    visibility_filter, _ = torch.min(radii, dim=-1)
+    visibility_filter = visibility_filter > 0
+    radii, _ = torch.max(radii, dim=-1)
     rets = {"render": rendered_image,
             "viewspace_points": means2D,
-            "visibility_filter": radii > 0,
+            "visibility_filter": visibility_filter,
             "radii": radii,
+            "max_weight": max_weight,
             }
 
     # additional regularizations
@@ -154,15 +147,6 @@ def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, sc
     # for unbounded scene, use expected depth, i.e., depth_ration = 0, to reduce disk anliasing.
     surf_depth = render_depth_expected * (1 - pipe.depth_ratio) + (pipe.depth_ratio) * render_depth_median
 
-    ### NEW SOBEL PART
-    surf_depth_grad = surf_depth
-    if len(surf_depth_grad.shape) == 3:
-        surf_depth_grad = surf_depth_grad.squeeze(0)
-
-    grad_y, grad_x = torch.gradient(surf_depth_grad, dim=(-2, -1))
-    depth_grad_magnitude = torch.sqrt(grad_x**2 + grad_y**2)
-    ### NEW SOBEL PART
-
     # assume the depth points form the 'surface' and generate psudo surface normal for regularizations.
     surf_normal = depth_to_normal(viewpoint_camera, surf_depth)
     surf_normal = surf_normal.permute(2, 0, 1)
@@ -175,8 +159,6 @@ def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, sc
         'rend_dist': render_dist,
         'surf_depth': surf_depth,
         'surf_normal': surf_normal,
-        'render_depth_expected': render_depth_expected,
-        'depth_gradient_magnitude': depth_grad_magnitude,
     })
 
     return rets

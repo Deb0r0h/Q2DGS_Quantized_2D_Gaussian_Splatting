@@ -352,22 +352,6 @@ class GaussianModel:
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
         self._opacity = optimizable_tensors["opacity"]
 
-    # TODO al 95% da togliere
-    def reset_opacity_geo(self):
-        # Preserve opacity in geometrically complex regions
-        if hasattr(self, 'last_depth'):
-            depth_grad = torch.abs(torch.gradient(self.last_depth, dim=(1,2))[0]).mean(dim=0)
-            preserve_mask = depth_grad > 0.1
-            preserved_opacity = self.get_opacity[preserve_mask]
-        
-        opacities_new = self.inverse_opacity_activation(torch.min(self.get_opacity, torch.ones_like(self.get_opacity)*0.01))
-        
-        if hasattr(self, 'last_depth'):
-            opacities_new[preserve_mask] = preserved_opacity
-            
-        optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
-        self._opacity = optimizable_tensors["opacity"]
-
     # Convert binary b to decimal integer, code from: https://stackoverflow.com/questions/55918468/convert-integer-to-pytorch-tensor-of-binary-bits
     # Used in load_ply() (quant)
     def bin2dec(self, b, bits):
@@ -749,65 +733,15 @@ class GaussianModel:
 
         torch.cuda.empty_cache()
 
-    # ---------- fine base + quant ------------
 
-
-
-
-
-
-
-
-    ### LOD PART ###
-    # per ora non va però ci si può lavorare
-    def compute_screen_size(self,viewpoint_camera):
-        h_pos = torch.cat([self._xyz, torch.ones_like(self._xyz[:,:1])], dim=1)
-        view_pos = (h_pos @ viewpoint_camera.world_view_transform.T)
-        depth = view_pos[:,2].clamp(min=0.01)
-        focal_lenght = viewpoint_camera.image_width / (2 * math.tan(viewpoint_camera.FoVx / 2))
-        scale_magnitude = torch.norm(self.get_scaling, dim=1)
-        size = (scale_magnitude * focal_lenght) / depth
-        return size
-
-        """
-        screen_pos = (h_pos @ projection_matrix.T)
-        screen_pos = screen_pos[:,:3] / screen_pos[:,3:4]
-        scaling = self.get_scaling
-        return torch.norm(scaling,dim=1) / screen_pos[:,2]"""
-    def apply_LOD(self,viewpoint_camera,thresholds, reduction_factors):
-        screen_size = self.compute_screen_size(viewpoint_camera)
-        mask = torch.ones_like(screen_size,dtype=torch.bool)
-        for lod_threshold,lod_reduction_factor in zip(thresholds,reduction_factors):
-            mask_lv = screen_size < lod_threshold
-            subsample_mask = torch.rand_like(screen_size) < lod_reduction_factor
-            mask &= ~(mask_lv & subsample_mask)
-        self.prune_points(~mask)
-    ### LOD PART ###
-
-
-    #  NEW VERSION FOR GEOMETRY LOSS DI D&P
-    def densify_and_prune_geometry(self, max_grad, min_opacity, extent, max_screen_size):
+    # Densification used in new_policy
+    def densify(self, max_grad, extent):
         grads = self.xyz_gradient_accum / self.denom
         grads[grads.isnan()] = 0.0
 
-        if hasattr(self, 'last_depth') and hasattr(self, 'last_normal'):
-            depth_grad = torch.abs(torch.gradient(self.last_depth, dim=(1, 2))[0]).mean(dim=0)
-            normal_diff = 1 - (self.last_normal[:, 1:] * self.last_normal[:, :-1]).sum(dim=0)
-            target_shape = normal_diff.shape
-            depth_grad_resized = F.interpolate(depth_grad.unsqueeze(0).unsqueeze(0), target_shape, mode='bilinear', align_corners=False).squeeze()
-            geo_complexity = (depth_grad_resized + normal_diff).clamp(0, 1)
-            geo_weights = geo_complexity[self.visibility_filter.cpu().numpy()]
-            weighted_grads = grads * (1 + 3 * torch.tensor(geo_weights, device="cuda"))
-        else:
-            weighted_grads = grads
+        self.densify_and_clone(grads, max_grad, extent)
+        self.densify_and_split(grads, max_grad, extent)
 
-        self.densify_and_clone(weighted_grads, max_grad, extent)
-        prune_mask = (self.get_opacity < min_opacity).squeeze()
-
-        if max_screen_size:
-            big_points_vs = self.max_radii2D > max_screen_size
-            big_points_ws = self.get_scaling.max(dim=1).values > 0.1 * extent
-            prune_mask = torch.logical_or(torch.logical_or(prune_mask, big_points_vs), big_points_ws)
-
-        self.prune_points(prune_mask)
         torch.cuda.empty_cache()
+
+    # ---------- fine base + quant ------------

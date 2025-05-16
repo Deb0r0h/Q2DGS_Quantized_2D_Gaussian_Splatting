@@ -45,7 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--sdf_trunc", default=-1.0, type=float, help='Mesh: truncation value for TSDF')
     parser.add_argument("--num_cluster", default=50, type=int, help='Mesh: number of connected clusters to export')
     parser.add_argument("--unbounded", action="store_true", help='Mesh: using unbounded mode for meshing')
-    parser.add_argument("--mesh_res", default=1024, type=int, help='Mesh: resolution for unbounded mesh extraction')
+    parser.add_argument("--mesh_res", default=700, type=int, help='Mesh: resolution for unbounded mesh extraction') #1024
     parser.add_argument("--gt_mesh", default="", type=str, help='GT Mesh file to perform evaluation')
     parser.add_argument("--load_quant", action="store_true", help="Load quantized model")
 

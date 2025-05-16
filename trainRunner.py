@@ -14,13 +14,13 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-scans_test = ["scan24"]
+scans_test = ["scan97"]
 #testoli = ["scan24", "scan37", "scan40", "scan55", "scan63"]
 
 #testoli = ["scan69", "scan83", "scan97", "scan105", "scan106"]
-#testoli = ["scan24", "scan40"]
-testoli = ["scan69", "scan83"]
-test = ["scan24"]
+testoli = ["scan24", "scan37", "scan40"]
+#testoli = ["scan69", "scan83"]
+test = ["scan65"]
 
 #testoli = ["scan110", "scan114", "scan118", "scan122"]
 
@@ -31,13 +31,22 @@ for scan in tqdm(test, desc="Training DTU dataset"):
     command = [
         "python", "train_quantitize_kmeans.py",
         "-s", scan_path,
-        "-m", output_folder]
-        #"-r", str(r_value)]
-        #"--dynamic_resolution"
-        #]
-        #"--depth_ratio", str(depth_ratio),
-        #"--lambda_dist", str(lambda_dist)
-    #]
+        "-m", output_folder,
+        "--dynamic_resolution"]
+
+    # mod values
+    depth_ratio = 1
+    r_value = 2
+    lambda_dist = 1000
+    command_mod = [
+        "python", "train_quantitize_kmeans.py",
+        "-s", scan_path,
+        "-m", output_folder,
+        "-r", str(r_value),
+        "--dynamic_resolution"
+        "--depth_ratio", str(depth_ratio),
+        "--lambda_dist", str(lambda_dist)]
+
 
     print(f"\nTraining {scan}...")
     subprocess.run(command)

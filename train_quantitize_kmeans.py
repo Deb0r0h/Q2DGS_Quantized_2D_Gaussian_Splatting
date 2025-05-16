@@ -28,7 +28,6 @@ from arguments import ModelParams, PipelineParams, OptimizationParams
 from scene.quantitize_k_means2D import Quantize_kMeans # QUANTIZATION
 from bitarray import bitarray
 from os.path import join
-from lpm.lpm import LPM
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -94,9 +93,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         kmeans_shdc_q = Quantize_kMeans(num_clusters=n_cls_sh, num_iters=n_it)
 
 
-    # LOCALIZED GAUSSIAN POINT MANAGEMENT
-    #lpm = LPM(scene, gaussians, angle = 90) # try with 45
-
 
 
     # TRAINING CYCLE
@@ -126,9 +122,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack) - 1))
 
 
-        # LPM
-        #current_view_index, sampled_index = lpm.find_neighbor_cam(viewpoint_cam)
-
         # Quant parameters
         if iteration > kmeans_st_iter:
             if iteration % freq_cls_assn == 1:
@@ -157,7 +150,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if iteration < 10000:
                 viewpoint_cam.change_resolution(2)  # low
             elif iteration < 20000:
-                viewpoint_cam.change_resolution(1)  # med
+                viewpoint_cam.change_resolution(1)  # medium
             else:
                 viewpoint_cam.change_resolution(0)  # normal
 
@@ -178,20 +171,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
 
-
-        # TODO immondizia
-        ### GEOMETRY PART ###
-        # Store geometric information
-        # gaussians.last_depth = render_pkg['surf_depth'].detach()
-        # gaussians.last_normal = render_pkg['surf_normal'].detach()
-        # # New geometric regularization loss
-        # depth_geo = torch.exp(-10 * torch.abs(render_pkg['surf_depth'] - render_pkg['render_depth_expected']))
-        # normal_geo = (render_pkg['surf_normal'] * render_pkg['rend_normal']).sum(dim=0)
-        # geometry_loss = 0.1 * (1 - depth_geo.mean()) + 0.1 * (1 - normal_geo.mean())
-        ### GEOMETRY PART ###
-
-
-
         # Regularization:
         # - Normal consistency -> L𝑛 = ∑︁𝜔𝑖(1−n𝑖^T N) based on the difference between the rendered normals and the the ones from the surfaces. Used after 7000 iter
         # - Depth distortion -> L𝑑 = ∑︁𝜔𝑖𝜔𝑗|𝑧𝑖−𝑧𝑗| based on the distance between the rendered points. Used after 3000 iter
@@ -205,10 +184,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         normal_loss = lambda_normal * (normal_error).mean()
         dist_loss = lambda_dist * (rend_dist).mean()
 
-        depth_grad = render_pkg["depth_gradient_magnitude"]
-
-
-        # TODO aggiungere opacity loss
 
         # Opacity regulation
         opacity_regulation = True
@@ -284,21 +259,19 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         scene.save(iteration, save_q=quantized_params, save_attributes=save_attributes)
 
                         # Save indices and codebook for quantized parameters
-                        #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
+                        kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
                         #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'scale_rot': kmeans_scrot_q, 'sh_dc': kmeans_shdc_q}
                         #kmeans_dict = {'rot': kmeans_rot_q, 'scale': kmeans_sc_q, 'sh_dc': kmeans_shdc_q}
-                        kmeans_dict = {'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
+                        #kmeans_dict = {'sh': kmeans_sh_q, 'dc': kmeans_dc_q}
                         kmeans_list = []
                         for param in quantized_params:
                             kmeans_list.append(kmeans_dict[param])
                         out_dir = join(scene.model_path, 'point_cloud/iteration_%d' % iteration) # Model PATH output/date/scan40 + pointcloud/iterationXXXXX
                         save_kmeans(kmeans_list, quantized_params, out_dir)
-
                         print("\n[ITER {}] Saving Gaussians (quant)".format(iteration))
                     else:
                         scene.save(iteration, save_q=[])
 
-                # prima c'erano solo loro e scene.save(iteration)
                 else:
                     print("\n[ITER {}] Saving Gaussians (NO quant)".format(iteration))
                     scene.save(iteration,save_q=[])
@@ -313,35 +286,28 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     size_threshold = 20 if iteration > opt.opacity_reset_interval else None
                     gaussians.densify_and_prune(opt.densify_grad_threshold, opt.opacity_cull, scene.cameras_extent,size_threshold)  # add and remove points
 
-                # if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == True: # MATTEO
-                #     gaussians.densify(opt.densify_grad_threshold, scene.cameras_extent)
-                #     # prune by contribution
-                #     xyz = gaussians.get_xyz
-                #     # load all cameras
-                #     top_k = 3
-                #     viewpoint_stack = scene.getTrainCameras().copy()
-                #     wc = torch.zeros((xyz.shape[0], top_k), dtype=xyz.dtype, device=xyz.device)
-                #     prev = torch.clone(wc)
-                #     for idx, viewpoint_cam in enumerate(viewpoint_stack):
-                #         with torch.no_grad():
-                #             render_pkg = render(viewpoint_cam, gaussians, pipe, background)
-                #             max_weight = render_pkg['max_weight']
-                #             wc[..., 0] = torch.maximum(wc[..., 0], max_weight)
-                #             for i in range(1, min(idx + 1, top_k)):
-                #                 temp = torch.minimum(prev[..., i - 1], max_weight)
-                #                 wc[..., i] = torch.maximum(wc[..., i], temp)
-                #             prev[...] = wc[...]
-                #     wc = wc[..., -1]
-                #     mask = wc < opt.weight_cull
-                #     gaussians.prune_points(mask)
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == True: # MATTEO
+                    gaussians.densify(opt.densify_grad_threshold, scene.cameras_extent)
+                    # prune by contribution
+                    xyz = gaussians.get_xyz
+                    # load all cameras
+                    top_k = 3
+                    viewpoint_stack = scene.getTrainCameras().copy()
+                    wc = torch.zeros((xyz.shape[0], top_k), dtype=xyz.dtype, device=xyz.device)
+                    prev = torch.clone(wc)
+                    for idx, viewpoint_cam in enumerate(viewpoint_stack):
+                        with torch.no_grad():
+                            render_pkg = render(viewpoint_cam, gaussians, pipe, background)
+                            max_weight = render_pkg['max_weight']
+                            wc[..., 0] = torch.maximum(wc[..., 0], max_weight)
+                            for i in range(1, min(idx + 1, top_k)):
+                                temp = torch.minimum(prev[..., i - 1], max_weight)
+                                wc[..., i] = torch.maximum(wc[..., i], temp)
+                            prev[...] = wc[...]
+                    wc = wc[..., -1]
+                    mask = wc < opt.weight_cull
+                    gaussians.prune_points(mask)
 
-                ### LOD ### immondizia
-                if pipe.apply_LOD:
-                    gaussians.apply_LOD(viewpoint_cam, pipe.lod_thres, pipe.lod_reduction_factors)
-                ### LOD ###
-
-
-                # Togliere per lpm
                 if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
                     gaussians.reset_opacity()
 
@@ -352,19 +318,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         thresh = None
                         gaussians.prune(opt.min_opacity_threshold,scene.cameras_extent,thresh)
                         #print('NUMBER OF GAUSS AFTER PRUNING (opacity):', gaussians._xyz.shape[0])
-
-                # LPM
-            #     if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-            #         size_threshold = 20 if iteration > opt.opacity_reset_interval else None
-            #         lpm.points_addition(opt.densify_grad_threshold, size_threshold, viewpoint_cam,current_view_index, sampled_index, image, gt_image)
-            #
-            #     if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
-            #         gaussians.reset_opacity()
-            #
-            # if iteration > opt.reset_from_iter and iteration % opt.reset_interval == 0 and iteration < opt.reset_until_iter:
-            #     lpm.points_calibration(opt.densify_grad_threshold, viewpoint_cam, current_view_index, sampled_index,image, gt_image)
-
-
 
 
             # OPTIMIZATION STEP
@@ -444,6 +397,57 @@ def save_kmeans(kmeans_list, quantized_params, out_dir):
 
     # Save codebook
     torch.save(centers_dict, join(out_dir, 'kmeans_centers.pth'))
+
+
+def save_kmeans_rle(kmeans_list, quantized_params, out_dir, gaussians):
+    # Sort by rotation indices
+    if 'rot' in quantized_params:
+        rot_kmeans = next(k for k, p in zip(kmeans_list, quantized_params) if p == 'rot')
+        rot_indices = rot_kmeans.cls_ids.cpu().numpy()
+        permutation = np.argsort(rot_indices)
+
+        # Apply permutation to Gaussians for saving
+        gaussians.save_ply(join(out_dir, "point_cloud.ply"),
+                           save_q=quantized_params,
+                           permutation=permutation)
+
+        # Compute RLE for rotation indices
+        sorted_rot = rot_indices[permutation]
+        rle_values, rle_counts = run_length_encode(sorted_rot)
+
+        # Save RLE data
+        np.save(join(out_dir, 'rot_rle.npy'), {'values': rle_values, 'counts': rle_counts})
+
+        # Save other indices sorted
+        bitarray_all = bitarray()
+        for kmeans, param in zip(kmeans_list, quantized_params):
+            if param == 'rot': continue
+            indices = kmeans.cls_ids.cpu().numpy()[permutation]
+            ...
+    else:
+        # Convert to bitarray object to save compressed version saving as npy or pth will use 8bits per digit (or boolean) for the indices
+        # Convert to binary, concat the indices for all params and save.
+        bitarray_all = bitarray([])
+        for kmeans in kmeans_list:
+            n_bits = int(np.ceil(np.log2(len(kmeans.cls_ids))))
+            assignments = dec2binary(kmeans.cls_ids, n_bits)
+            bitarr = bitarray(list(assignments.cpu().numpy().flatten()))
+            # bitarr = bitarray(list(map(bool, assignments.cpu().numpy().flatten())))
+            bitarray_all.extend(bitarr)
+        with open(join(out_dir, 'kmeans_inds.bin'), 'wb') as file:
+            bitarray_all.tofile(file)
+
+        # Save details needed for loading
+        args_dict = {}
+        args_dict['params'] = quantized_params
+        args_dict['n_bits'] = n_bits
+        args_dict['total_len'] = len(bitarray_all)
+        np.save(join(out_dir, 'kmeans_args.npy'), args_dict)
+        centers_dict = {param: kmeans.centers for (kmeans, param) in zip(kmeans_list, quantized_params)}
+
+        # Save codebook
+        torch.save(centers_dict, join(out_dir, 'kmeans_centers.pth'))
+
 
 def prepare_output_and_logger(args):
     if not args.model_path:

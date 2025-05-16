@@ -1,4 +1,4 @@
-name: prima
+name: light_policy
 channels:
   - pytorch
   - nvidia
