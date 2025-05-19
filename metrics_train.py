@@ -86,7 +86,7 @@ def evaluate(model_paths):
                          "PSNR": {name: psnr for psnr, name in zip(torch.tensor(psnrs).tolist(), image_names)},
                          "LPIPS": {name: lp for lp, name in zip(torch.tensor(lpipss).tolist(), image_names)}})
                 else:
-                    break
+                    continue
 
             with open(scene_dir + "/results.json", 'w') as fp:
                 json.dump(full_dict[scene_dir], fp, indent=True)

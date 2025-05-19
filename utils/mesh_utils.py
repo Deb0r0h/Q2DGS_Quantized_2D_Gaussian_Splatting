@@ -55,7 +55,7 @@ def compute_metrics(ref_points, eval_points, f_threshold=0.5):
 
 
 
-
+#TODO 1000
 def post_process_mesh(mesh, cluster_to_keep=1000):
     """
     Post-process a mesh to filter out floaters and disconnected parts
@@ -70,10 +70,7 @@ def post_process_mesh(mesh, cluster_to_keep=1000):
     cluster_n_triangles = np.asarray(cluster_n_triangles)
     cluster_area = np.asarray(cluster_area)
     n_cluster = np.sort(cluster_n_triangles.copy())[-cluster_to_keep]
-    n_cluster = max(n_cluster, 200) # 50
-
-    #cluster_threshold = 0.003 * len(np.array(mesh.vertices))
-    #n_cluster = max(n_cluster, cluster_threshold)
+    n_cluster = max(n_cluster, 100) # 50
 
     triangles_to_remove = cluster_n_triangles[triangle_clusters] < n_cluster
     mesh_0.remove_triangles_by_mask(triangles_to_remove)
@@ -177,6 +174,8 @@ class GaussianExtractor(object):
         print(f"The estimated bounding radius is {self.radius:.2f}")
         print(f"Use at least {2.0 * self.radius:.2f} for depth_trunc")
 
+
+    #TODO self, voxel_size=0.004, sdf_trunc=0.02, depth_trunc=3, mask_backgrond=True
     @torch.no_grad()
     def extract_mesh_bounded(self, voxel_size=0.004, sdf_trunc=0.02, depth_trunc=3, mask_backgrond=True):
         """
@@ -222,7 +221,7 @@ class GaussianExtractor(object):
         return mesh
 
 
-    #1024
+    #TODO 1024
     @torch.no_grad()
     def extract_mesh_unbounded(self, resolution=1024):
         """

@@ -281,7 +281,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-                new_policy = False
+                new_policy = True
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == False: # ORIGINAL
                     size_threshold = 20 if iteration > opt.opacity_reset_interval else None
                     gaussians.densify_and_prune(opt.densify_grad_threshold, opt.opacity_cull, scene.cameras_extent,size_threshold)  # add and remove points
@@ -314,10 +314,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 # TODO azione della opacity regolation
                 if opacity_regulation and iteration > opt.opacity_start_iter:
                     if iteration <= opt.max_prune_opacity and iteration % opt.opacity_pruning == 0:
-                        #print('NUMBER OF GAUSS BEFORE PRUNING (opacity):', gaussians._xyz.shape[0])
                         thresh = None
                         gaussians.prune(opt.min_opacity_threshold,scene.cameras_extent,thresh)
-                        #print('NUMBER OF GAUSS AFTER PRUNING (opacity):', gaussians._xyz.shape[0])
 
 
             # OPTIMIZATION STEP

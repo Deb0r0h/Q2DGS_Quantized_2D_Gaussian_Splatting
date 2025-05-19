@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 output_path = 'output/date'
 gt_mesh_path = 'dataset/DTU_GT/mesh'
-depth_ratio = 0
+depth_ratio = 1
 r_value = 2
 
 scans = [
@@ -13,18 +13,9 @@ scans = [
     "scan69", "scan83", "scan97", "scan105", "scan106",
     "scan110", "scan114", "scan118", "scan122"
 ]
+test = ["scan24", "scan37", "scan40"]
 
-scans_test = ["scan69"]
-
-#testoli = ["scan24", "scan37", "scan40", "scan55", "scan63"]
-#testoli = ["scan69", "scan83", "scan97", "scan105", "scan106"]
-#testoli = ["scan110", "scan114", "scan118", "scan122"]
-#testoli = ["scan69", "scan83"]
-test = ["scan97"]
-#testoli = ["scan24", "scan37", "scan40"]
-testoli = ["scan24", "scan37", "scan40","scan55","scan63"]
-
-for scan in tqdm(testoli, desc="Rendering DTU dataset"):
+for scan in tqdm(test, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)
     gt_mesh = os.path.join(gt_mesh_path, f"{scan}.ply")
 
@@ -41,6 +32,8 @@ for scan in tqdm(testoli, desc="Rendering DTU dataset"):
     command = [
         "python", "render.py",
         "--model_path", output_folder,
+        "-r", str(r_value),
+        "--depth_ratio", str(depth_ratio),
         "--load_quant"
     ]
 

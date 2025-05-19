@@ -40,12 +40,12 @@ if __name__ == "__main__":
     parser.add_argument("--skip_mesh", action="store_true")
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--render_path", action="store_true")
-    parser.add_argument("--voxel_size", default=-1.0, type=float, help='Mesh: voxel size for TSDF')
-    parser.add_argument("--depth_trunc", default=-1.0, type=float, help='Mesh: Max depth range for TSDF')
-    parser.add_argument("--sdf_trunc", default=-1.0, type=float, help='Mesh: truncation value for TSDF')
-    parser.add_argument("--num_cluster", default=50, type=int, help='Mesh: number of connected clusters to export')
+    parser.add_argument("--voxel_size", default=0.006, type=float, help='Mesh: voxel size for TSDF')
+    parser.add_argument("--depth_trunc", default=2.5, type=float, help='Mesh: Max depth range for TSDF')
+    parser.add_argument("--sdf_trunc", default=0.03, type=float, help='Mesh: truncation value for TSDF')
+    parser.add_argument("--num_cluster", default=100, type=int, help='Mesh: number of connected clusters to export')
     parser.add_argument("--unbounded", action="store_true", help='Mesh: using unbounded mode for meshing')
-    parser.add_argument("--mesh_res", default=700, type=int, help='Mesh: resolution for unbounded mesh extraction') #1024
+    parser.add_argument("--mesh_res", default=1024, type=int, help='Mesh: resolution for unbounded mesh extraction') #1024
     parser.add_argument("--gt_mesh", default="", type=str, help='GT Mesh file to perform evaluation')
     parser.add_argument("--load_quant", action="store_true", help="Load quantized model")
 
@@ -58,7 +58,6 @@ if __name__ == "__main__":
     dataset, iteration, pipe, load_quant = model.extract(args), args.iteration, pipeline.extract(args), args.load_quant
     gaussians = GaussianModel(dataset.sh_degree)
     scene = Scene(dataset, gaussians, load_iteration=iteration, shuffle=False,load_quant=True)
-    print("LENNNNNNNNNNNNNNNNNNNNNNN:", len(scene.getTestCameras()))
     bg_color = [1,1,1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
     
