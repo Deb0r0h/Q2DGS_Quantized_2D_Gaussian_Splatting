@@ -15,7 +15,7 @@ scans = [
 ]
 test = ["scan63"]
 
-for scan in tqdm(scans, desc="Rendering DTU dataset"):
+for scan in tqdm(test, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)
     gt_mesh = os.path.join(gt_mesh_path, f"{scan}.ply")
 

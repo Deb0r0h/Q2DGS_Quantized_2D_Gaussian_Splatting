@@ -50,8 +50,6 @@ if __name__ == "__main__":
     parser.add_argument("--gt_mesh", default="", type=str, help='GT Mesh file to perform evaluation')
     parser.add_argument("--load_quant", action="store_true", help="Load quantized model")
 
-    #vox 0.006 depth 2.5 # sdf 0.03 #clust 100 #res 1024
-
     args = get_combined_args(parser)
     print("Rendering " + args.model_path)
 
@@ -95,35 +93,7 @@ if __name__ == "__main__":
                     num_frames=n_fames)
 
 
-    test = True
-    if not args.skip_mesh and test == False:
-        print("export mesh ...")
-        print("NON sono nel test")
-        os.makedirs(train_dir, exist_ok=True)
-        # set the active_sh to 0 to export only diffuse texture
-        gaussExtractor.gaussians.active_sh_degree = 0
-        gaussExtractor.reconstruction(scene.getTrainCameras())
-        # extract the mesh and save
-        if args.unbounded:
-            name = 'fuse_unbounded.ply'
-            mesh = gaussExtractor.extract_mesh_unbounded(resolution=args.mesh_res)
-        else:
-            name = 'fuse.ply'
-            depth_trunc = (gaussExtractor.radius * 2.0) if args.depth_trunc < 0  else args.depth_trunc
-            voxel_size = (depth_trunc / args.mesh_res) if args.voxel_size < 0 else args.voxel_size
-            sdf_trunc = 5.0 * voxel_size if args.sdf_trunc < 0 else args.sdf_trunc
-            mesh = gaussExtractor.extract_mesh_bounded(voxel_size=voxel_size, sdf_trunc=sdf_trunc, depth_trunc=depth_trunc)
-
-        o3d.io.write_triangle_mesh(os.path.join(train_dir, name), mesh)
-        print("mesh saved at {}".format(os.path.join(train_dir, name)))
-        # post-process the mesh and save, saving the largest N clusters
-        mesh_post = post_process_mesh(mesh, cluster_to_keep=args.num_cluster)
-        o3d.io.write_triangle_mesh(os.path.join(train_dir, name.replace('.ply', '_post.ply')), mesh_post)
-        print("mesh post processed saved at {}".format(os.path.join(train_dir, name.replace('.ply', '_post.ply'))))
-
-
-    elif not args.skip_mesh and test == True:
-        print("SONO nel TEST")
+    if not args.skip_mesh:
         print("export mesh ...")
         os.makedirs(train_dir, exist_ok=True)
         # set the active_sh to 0 to export only diffuse texture
@@ -136,50 +106,23 @@ if __name__ == "__main__":
         else:
             name = 'fuse.ply'
             n_gaussians = gaussExtractor.gaussians.get_xyz.shape[0]
-            if args.depth_trunc < 0:
-                base_depth = gaussExtractor.radius * 1.6
-                depth_trunc = base_depth
-            else:
-                depth_trunc = args.depth_trunc
-
-            if args.voxel_size < 0:
-                base_voxel = depth_trunc / (args.mesh_res * 0.6)
-                voxel_size = base_voxel
-            else:
-                voxel_size = args.voxel_size
-
-            if args.sdf_trunc < 0:
-                base_sdf  = 1.6 * voxel_size
-                sdf_trunc = base_sdf
-            else:
-                sdf_trunc = args.sdf_trunc
-
+            depth_trunc = gaussExtractor.radius * 1.6 if args.depth_trunc < 0 else args.depth_trunc
+            voxel_size = (depth_trunc / (args.mesh_res * 0.6)) if args.voxel_size < 0 else args.voxel_size
+            sdf_trunc = (1.6 * voxel_size) if args.sdf_trunc < 0 else args.sdf_trunc
+            num_cluster = max(15,min(50, int(25 * (n_gaussians / 90000)))) if args.num_cluster != 50 else args.num_cluster
             mesh = gaussExtractor.extract_mesh_bounded(
                 voxel_size=voxel_size,
                 sdf_trunc=sdf_trunc,
                 depth_trunc=depth_trunc
             )
+            #print(f"depth_trunc: {depth_trunc}, voxel_size: {voxel_size}, sdf_trunc: {sdf_trunc}, num_cluster: {num_cluster}")
 
-            if args.num_cluster == 50:
-                density_factor = n_gaussians / 90000
-                adap_cluster = int(25*density_factor)
-                num_cluster = max(15,min(50,adap_cluster))
-                #num_cluster = max(3, int(15 * (n_gaussians / 90_000)))
-            else:
-                num_cluster = args.num_cluster
-
-
-        print(f"depth_trunc: {depth_trunc}, voxel_size: {voxel_size}, sdf_trunc: {sdf_trunc}, num_cluster: {num_cluster}")
         o3d.io.write_triangle_mesh(os.path.join(train_dir, name), mesh)
         print("mesh saved at {}".format(os.path.join(train_dir, name)))
         # post-process the mesh and save, saving the largest N clusters
         mesh_post = post_process_mesh(mesh, cluster_to_keep=num_cluster)
         o3d.io.write_triangle_mesh(os.path.join(train_dir, name.replace('.ply', '_post.ply')), mesh_post)
         print("mesh post processed saved at {}".format(os.path.join(train_dir, name.replace('.ply', '_post.ply'))))
-
-
-
-
 
     # Compute metrics for evaluation (GT vs Obtained)
     compute = False
