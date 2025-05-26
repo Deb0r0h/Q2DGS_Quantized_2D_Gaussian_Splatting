@@ -108,6 +108,14 @@ def to_cam_open3d(viewpoint_stack):
     return camera_traj
 
 
+def adapt_mesh(mesh, reduction):
+    n_vertices = len(np.asarray(mesh.vertices))
+    target_triangles = int((1-reduction) * len(np.asarray(mesh.triangles)))
+    mesh_s = mesh.simplify_quadric_decimation(target_triangles)
+    return mesh_s
+
+
+
 class GaussianExtractor(object):
     def __init__(self, gaussians, render, pipe, bg_color=None):
         """
@@ -335,3 +343,5 @@ class GaussianExtractor(object):
             save_img_f32(self.depthmaps[idx][0].cpu().numpy(), os.path.join(vis_path, 'depth_{0:05d}'.format(idx) + ".tiff"))
             # save_img_u8(self.normals[idx].permute(1,2,0).cpu().numpy() * 0.5 + 0.5, os.path.join(vis_path, 'normal_{0:05d}'.format(idx) + ".png"))
             # save_img_u8(self.depth_normals[idx].permute(1,2,0).cpu().numpy() * 0.5 + 0.5, os.path.join(vis_path, 'depth_normal_{0:05d}'.format(idx) + ".png"))
+
+

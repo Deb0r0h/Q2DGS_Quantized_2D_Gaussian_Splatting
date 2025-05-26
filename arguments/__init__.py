@@ -101,14 +101,14 @@ class OptimizationParams(ParamGroup):
         # opacity regulation
         self.max_prune_opacity = 20_000
         self.opacity_start_iter = 15_000
-        self.lambda_opacity = 1.1e-7
+        self.lambda_opacity = 1e-7
         self.min_opacity_threshold = 0.1
         self.opacity_pruning = 1000
 
         # quantization
-        self.n_cls = 512
-        self.n_cls_sh = 128
-        self.n_cls_dc = 512
+        self.n_cls = 1000
+        self.n_cls_sh = 200
+        self.n_cls_dc = 1000
         self.n_it = 10
         self.kmeans_st_iter = 20_000
         self.freq_cls_assn = 100
@@ -116,7 +116,7 @@ class OptimizationParams(ParamGroup):
         self.quantized_params =  ['rot', 'scale', 'sh', 'dc']
 
         # new policy
-        self.weight_cull = 0.015 #0.05
+        self.weight_cull = 0.0085 #0.05
 
         super().__init__(parser, "Optimization Parameters")
 
