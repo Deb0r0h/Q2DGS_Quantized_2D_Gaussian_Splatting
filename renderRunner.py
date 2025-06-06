@@ -12,8 +12,9 @@ scans = [
     "scan24", "scan37", "scan40", "scan55", "scan63", "scan65",
     "scan69", "scan83", "scan97", "scan105", "scan106",
     "scan110", "scan114", "scan118", "scan122"
-]
-test = ["scan63"]
+        ]
+
+test = ["scan69", "scan83", "scan97", "scan105", "scan106"]
 
 for scan in tqdm(test, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)

@@ -14,7 +14,7 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-test = ["scan63"]
+test = ["scan69", "scan83", "scan97", "scan105", "scan106"]
 for scan in tqdm(test, desc="Training DTU dataset"):
     scan_path = os.path.join(dataset_path, scan)
     output_folder = os.path.join(output_path, scan)

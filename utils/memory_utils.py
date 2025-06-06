@@ -11,9 +11,9 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-test = ["scan24", "scan37", "scan40"]
+test = ["scan69", "scan83", "scan97", "scan105", "scan106"]
 
-for scan in tqdm(scans, desc="Metrics on DTU dataset"):
+for scan in tqdm(test, desc="Metrics on DTU dataset"):
     print(f"\nComputing memory usage {scan}")
     scan_path = os.path.join(data_path, scan)
     ply_file = os.path.join(scan_path, "train", "ours_30000", "fuse_post.ply")
