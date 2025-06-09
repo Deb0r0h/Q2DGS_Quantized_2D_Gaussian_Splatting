@@ -11,10 +11,9 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-test = ["scan69", "scan83", "scan97", "scan105", "scan106"]
 
-for scan in tqdm(test, desc="Metrics on DTU dataset"):
-    print(f"\nComputing memory usage {scan}")
+print("Computing MB...")
+for scan in tqdm(scans, desc="Metrics on DTU dataset"):
     scan_path = os.path.join(data_path, scan)
     ply_file = os.path.join(scan_path, "train", "ours_30000", "fuse_post.ply")
 
@@ -24,3 +23,4 @@ for scan in tqdm(test, desc="Metrics on DTU dataset"):
     with open(csv_path, mode='a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([scan, size_mb])
+print("Computing MB ended")

@@ -102,7 +102,7 @@ class OptimizationParams(ParamGroup):
         self.max_prune_opacity = 20_000
         self.opacity_start_iter = 15_000
         self.lambda_opacity = 1e-7
-        self.min_opacity_threshold = 0.1
+        self.min_opacity_threshold = 0.1 #0.1
         self.opacity_pruning = 1000
 
         # quantization

@@ -106,9 +106,9 @@ if __name__ == "__main__":
         else:
             name = 'fuse.ply'
             n_gaussians = gaussExtractor.gaussians.get_xyz.shape[0]
-            depth_trunc = gaussExtractor.radius * 1.6 if args.depth_trunc < 0 else args.depth_trunc
-            voxel_size = (depth_trunc / (args.mesh_res * 0.6)) if args.voxel_size < 0 else args.voxel_size
-            sdf_trunc = (1.6 * voxel_size) if args.sdf_trunc < 0 else args.sdf_trunc
+            depth_trunc = gaussExtractor.radius * 1.60 if args.depth_trunc < 0 else args.depth_trunc
+            voxel_size = (depth_trunc / (args.mesh_res * 0.60)) if args.voxel_size < 0 else args.voxel_size
+            sdf_trunc = (1.60 * voxel_size) if args.sdf_trunc < 0 else args.sdf_trunc
             num_cluster = max(15,min(50, int(25 * (n_gaussians / 90000)))) if args.num_cluster != 50 else args.num_cluster
             mesh = gaussExtractor.extract_mesh_bounded(
                 voxel_size=voxel_size,

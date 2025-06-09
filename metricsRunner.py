@@ -12,11 +12,11 @@ scans = [
 
 test = ["scan69", "scan83", "scan97", "scan105", "scan106"]
 
-for scan in tqdm(bobo, desc="Metrics on DTU dataset"):
+for scan in tqdm(scans, desc="Metrics on DTU dataset"):
     scan_path = os.path.join(dataset_path, scan)
 
     command = [
-        "python", "metrics_train.py",
+        "python", "metrics_test.py",
         "--model_paths", scan_path]
 
     print(f"\nComputing metrics {scan}...")
