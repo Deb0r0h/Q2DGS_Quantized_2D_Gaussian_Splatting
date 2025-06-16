@@ -133,6 +133,21 @@ if __name__ == '__main__':
     dist_s2d, idx_s2d = nn_engine.kneighbors(stl_above, n_neighbors=1, return_distance=True)
     mean_s2d = dist_s2d[dist_s2d < max_dist].mean()
 
+    f_threshold = 0.5
+    #temp_p = (dist_d2s < f_threshold).sum
+    #precision = temp_p / len(dist_d2s) if len(dist_d2s) > 0 else 0
+    #temp_r = (dist_s2d < f_threshold).sum
+    #recall = temp_r / len(dist_s2d) if len(dist_s2d) > 0 else 0
+
+    precision = np.mean(dist_d2s < f_threshold)
+    recall = np.mean(dist_s2d < f_threshold)
+
+    if precision + recall == 0:
+        f_score = 0
+    else:
+        f_score = 2 * precision * recall / (precision + recall)
+
+
     pbar.update(1)
     pbar.set_description('visualize error')
     vis_dist = args.visualize_threshold
@@ -155,12 +170,13 @@ if __name__ == '__main__':
     pbar.set_description('done')
     pbar.close()
     over_all = (mean_d2s + mean_s2d) / 2
-    print(mean_d2s, mean_s2d, over_all)
+    print(mean_d2s, mean_s2d, over_all,f_score)
     
     import json
     with open(f'{args.vis_out_dir}/results.json', 'w') as fp:
         json.dump({
             'mean_d2s': mean_d2s,
             'mean_s2d': mean_s2d,
-            'overall': over_all,
+            'overall(chamfer)': over_all,
+            'f_score': f_score,
         }, fp, indent=True)

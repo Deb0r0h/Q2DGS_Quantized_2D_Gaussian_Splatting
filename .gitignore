@@ -18,3 +18,5 @@ output/
 metrics_data/metrics_table.tex
 /submodules/
 /submodules/simple-knn/
+memory.csv
+scripts/metrics_results
