@@ -70,6 +70,16 @@ python render.py -r 2 --depth_ratio 1 --skip_test --skip_train
 ```
 **Custom Dataset**: We use the same COLMAP loader as 3DGS, you can prepare your data following [here](https://github.com/graphdeco-inria/gaussian-splatting?tab=readme-ov-file#processing-your-own-scenes). 
 
+## Evaluation
+To compute chamfer and F1
+```bash
+python python scripts/dtu_eval.py --dtu dataset/DTU --DTU_Official dataset/stl --skip_training --skip_rendering --output_path ./output/date
+```
+To compute PSNR, SSIM, LIPPS
+```bash
+python temp
+```
+
 
 ## Note
 :D

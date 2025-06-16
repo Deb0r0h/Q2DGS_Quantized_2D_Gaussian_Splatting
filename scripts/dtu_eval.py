@@ -1,8 +1,8 @@
 import os
 from argparse import ArgumentParser
 
-dtu_scenes = ['scan24', 'scan37', 'scan40', 'scan55', 'scan63', 'scan65', 'scan69', 'scan83', 'scan97', 'scan105', 'scan106', 'scan110', 'scan114', 'scan118', 'scan122']
-
+#dtu_scenes = ['scan24', 'scan37', 'scan40', 'scan55', 'scan63', 'scan65', 'scan69', 'scan83', 'scan97', 'scan105', 'scan106', 'scan110', 'scan114', 'scan118', 'scan122']
+dtu_scenes = ['scan24']
 parser = ArgumentParser(description="Full evaluation script parameters")
 parser.add_argument("--skip_training", action="store_true")
 parser.add_argument("--skip_rendering", action="store_true")
@@ -16,7 +16,7 @@ all_scenes.extend(dtu_scenes)
 
 if not args.skip_metrics:
     parser.add_argument('--DTU_Official', "-DTU", required=True, type=str)
-    parser.add_argument('--eval_path', required=True, type=str)
+    #parser.add_argument('--eval_path', required=True, type=str)
     args = parser.parse_args()
 
 
