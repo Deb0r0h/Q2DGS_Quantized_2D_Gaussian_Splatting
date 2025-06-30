@@ -14,28 +14,18 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
         ]
 
-test = ["scan69", "scan83", "scan97", "scan105", "scan106"]
+sc = ["scan122"]
 
-for scan in tqdm(scans, desc="Rendering DTU dataset"):
+for scan in tqdm(sc, desc="Rendering DTU dataset"):
     output_folder = os.path.join(output_path, scan)
-    gt_mesh = os.path.join(gt_mesh_path, f"{scan}.ply")
-
-    # command = [
-    #     "python", "render.py",
-    #     "-r", str(r_value),
-    #     "--depth_ratio", str(depth_ratio),
-    #     "--skip_test",
-    #     "--skip_train",
-    #     "--model_path", output_folder,
-    #     "--gt_mesh", gt_mesh
-    # ]
+    #gt_mesh = os.path.join(gt_mesh_path, f"{scan}.ply")
 
     command = [
         "python", "render.py",
         "--model_path", output_folder,
         "-r", str(r_value),
-        "--depth_ratio", str(depth_ratio),
         "--eval",
+        "--depth_ratio", str(depth_ratio),
         "--load_quant"
     ]
 

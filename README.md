@@ -73,7 +73,7 @@ python render.py -r 2 --depth_ratio 1 --skip_test --skip_train
 ## Evaluation
 To compute chamfer and F1
 ```bash
-python python scripts/dtu_eval.py --dtu dataset/DTU --DTU_Official dataset/stl --skip_training --skip_rendering --output_path ./output/date
+python scripts/dtu_eval.py --dtu dataset/DTU --DTU_Official dataset/stl --skip_training --skip_rendering --output_path ./output/date
 ```
 To compute PSNR, SSIM, LIPPS
 ```bash

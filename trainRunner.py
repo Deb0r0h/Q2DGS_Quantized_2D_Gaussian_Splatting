@@ -14,8 +14,9 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-test = ["scan55"]
-for scan in tqdm(test, desc="Training DTU dataset"):
+sc = ["scan122"]
+
+for scan in tqdm(sc, desc="Training DTU dataset"):
     scan_path = os.path.join(dataset_path, scan)
     output_folder = os.path.join(output_path, scan)
 
@@ -25,6 +26,7 @@ for scan in tqdm(test, desc="Training DTU dataset"):
         "-m", output_folder,
         "-r", str(r_value),
         "--dynamic_resolution",
+        "--eval",
         "--depth_ratio", str(depth_ratio),
         "--lambda_dist", str(lambda_dist)]
 

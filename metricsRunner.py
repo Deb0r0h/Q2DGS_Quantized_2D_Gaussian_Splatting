@@ -10,13 +10,13 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
-test = ["scan69", "scan83", "scan97", "scan105", "scan106"]
+test = ["scan110","scan118"]
 
-for scan in tqdm(scans, desc="Metrics on DTU dataset"):
+for scan in tqdm(test, desc="Metrics on DTU dataset"):
     scan_path = os.path.join(dataset_path, scan)
 
     command = [
-        "python", "metrics_test.py",
+        "python", "metrics_train.py",
         "--model_paths", scan_path]
 
     print(f"\nComputing metrics {scan}...")

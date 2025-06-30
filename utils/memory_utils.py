@@ -11,9 +11,11 @@ scans = [
     "scan110", "scan114", "scan118", "scan122"
 ]
 
+baby = ["scan110","scan118"]
+
 
 print("Computing MB...")
-for scan in tqdm(scans, desc="Metrics on DTU dataset"):
+for scan in tqdm(baby, desc="Metrics on DTU dataset"):
     scan_path = os.path.join(data_path, scan)
     ply_file = os.path.join(scan_path, "train", "ours_30000", "fuse_post.ply")
 
