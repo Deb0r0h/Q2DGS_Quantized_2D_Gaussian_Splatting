@@ -281,12 +281,11 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-                new_policy = True
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == False: # ORIGINAL
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and opt.new_policy == False: # ORIGINAL
                     size_threshold = 20 if iteration > opt.opacity_reset_interval else None
                     gaussians.densify_and_prune(opt.densify_grad_threshold, opt.opacity_cull, scene.cameras_extent,size_threshold)  # add and remove points
 
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and new_policy == True: # MATTEO
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0 and opt.new_policy == True:
                     gaussians.densify(opt.densify_grad_threshold, scene.cameras_extent)
                     # prune by contribution
                     xyz = gaussians.get_xyz

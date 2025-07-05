@@ -116,6 +116,7 @@ class OptimizationParams(ParamGroup):
         self.quantized_params =  ['rot', 'scale', 'sh', 'dc']
 
         # new policy
+        self.new_policy = True
         self.weight_cull = 0.0085 #0.05 base, nuova bse 0.0085  - 0.01
 
         super().__init__(parser, "Optimization Parameters")
