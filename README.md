@@ -1,10 +1,10 @@
-# Light 2D Gaussian Splatting (L-2DGS)
+# Quantized 2D Gaussian Splatting (Q2DGS)
 
 
 
 ![Teaser image](assets/teaser.jpg)
 
-This repo contains the implementation for the paper 2DGS ([source code](https://github.com/hbb1/2d-gaussian-splatting)) with a vector quantization, that with the contribution of a new regularization term redece the number of gaussians and the memory storage, taking inspiration from the work presents in [Compact3D](https://github.com/UCDvision/compact3d). This work is part of my master thesis
+This repository contains the implementation of the quantized 2D Gaussian splatting Q2DGS. A modified version of the 2DGS developed by me for my master's thesis. The new model is able to obtain lighter reconstructions in terms of memory, making it easier to use the reconstructed scenes.
 
 
 ## Installation
@@ -77,7 +77,7 @@ python scripts/dtu_eval.py --dtu dataset/DTU --DTU_Official dataset/stl --skip_t
 ```
 To compute PSNR, SSIM, LIPPS
 ```bash
-python temp
+python metricsRunner.py # test for NVS, train for 3DR
 ```
 
 
