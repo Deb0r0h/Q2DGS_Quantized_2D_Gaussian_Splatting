@@ -11,6 +11,12 @@ The process of memory reduction is based on three key elements:
 - A regularization function that acts only on opacity to reduce the number of Gaussians with a low opacity value, considering a threshold 𝜏𝜎
 - A modificaton to the CUDA kernel code executed in the rasterizationphase and densification step for the removal of points and consequently Gaussians
 
+<p align="center">
+  <img src="assets/orso.gif" width="30%" />
+  <img src="assets/frutta.gif" width="30%" />
+  <img src="assets/gufo.gif" width="30%" />
+</p>
+
 
 ## Installation
 
