@@ -6,6 +6,11 @@
 
 This repository contains the implementation of the quantized 2D Gaussian splatting Q2DGS. A modified version of the 2DGS developed by me for my master's thesis. The new model is able to obtain lighter reconstructions in terms of memory, making it easier to use the reconstructed scenes.
 
+The process of memory reduction is based on three key elements:
+- A vector quantization of Gaussian parameters based on K-means during the optimization
+- A regularization function that acts only on opacity to reduce the number of Gaussians with a low opacity value, considering a threshold 𝜏𝜎
+- A modificaton to the CUDA kernel code executed in the rasterizationphase and densification step for the removal of points and consequently Gaussians
+
 
 ## Installation
 
