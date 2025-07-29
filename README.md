@@ -22,9 +22,9 @@ The process of memory reduction is based on three key elements:
 
 ```bash
 # download
-git clone https://github.com/Deb0r0h/Light_2DGS.git --recursive
+git clone https://github.com/Deb0r0h/Q2DGS_Quantized_2D_Gaussian_Splatting.git --recursive
 conda env create --file environment.yml
-conda activate surfel_splatting
+conda activate q2dgs
 ```
 ## Training
 To train a scene, simply use
