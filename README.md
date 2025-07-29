@@ -81,6 +81,8 @@ python metricsRunner.py # test for NVS, train for 3DR
 ```
 
 
-## Note
-:D
+## Acknowledgements
+The project is based on the splendid work done in 
+- [2DGS](https://github.com/hbb1/2d-gaussian-splatting)
+- [Compact3D](https://github.com/UCDvision/compact3d/tree/main)
 
