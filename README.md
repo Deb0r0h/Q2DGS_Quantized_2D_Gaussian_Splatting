@@ -4,7 +4,8 @@
 
 ![Teaser image](assets/scheme.png)
 
-This repository contains the implementation of the quantized 2D Gaussian splatting Q2DGS. A modified version of the 2DGS developed by me for my master's thesis. The new model is able to obtain lighter reconstructions in terms of memory, making it easier to use the reconstructed scenes.
+This repository contains the implementation of the quantized 2D Gaussian splatting Q2DGS. A modified version of the 2DGS developed by me for my master's thesis. 
+The new model is able to obtain lighter reconstructions in terms of memory, making it easier to use the reconstructed scenes.
 
 The process of memory reduction is based on three key elements:
 - A vector quantization of Gaussian parameters based on K-means during the optimization
