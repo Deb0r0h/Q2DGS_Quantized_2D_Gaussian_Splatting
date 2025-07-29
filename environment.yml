@@ -1,4 +1,4 @@
-name: light_policy
+name: q2dgs
 channels:
   - pytorch
   - nvidia
