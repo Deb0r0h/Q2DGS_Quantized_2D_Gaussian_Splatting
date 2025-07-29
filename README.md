@@ -2,7 +2,7 @@
 
 
 
-![Teaser image](assets/teaser.jpg)
+![Teaser image](assets/scheme.png)
 
 This repository contains the implementation of the quantized 2D Gaussian splatting Q2DGS. A modified version of the 2DGS developed by me for my master's thesis. The new model is able to obtain lighter reconstructions in terms of memory, making it easier to use the reconstructed scenes.
 
